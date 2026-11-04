@@ -7,8 +7,10 @@ import {
   AlertCircle,
   FileSpreadsheet,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
+import { formatDateIST } from '../utils/date';
 
 export default function UserTable({
   userList = [],
@@ -20,7 +22,8 @@ export default function UserTable({
   onPreviewCard,
   onApproveCard,
   onOpenStatusModal,
-  onExportCsv
+  onExportCsv,
+  onDeleteCard
 }) {
   return (
     <div className="space-y-4">
@@ -166,7 +169,7 @@ export default function UserTable({
                       {u.user_category || 'WorkDen Member'}
                     </td>
                     <td className="py-3 px-4 text-[#888]">
-                      {u.expiry_date || 'Permanent'}
+                      {u.expiry_date ? formatDateIST(u.expiry_date) : 'Permanent'}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
@@ -213,6 +216,16 @@ export default function UserTable({
                         >
                           <span className="text-xs font-bold leading-none">•••</span>
                         </button>
+
+                        {onDeleteCard && (
+                          <button
+                            onClick={() => onDeleteCard({ ...u, id: u.card_id || u.id, entity_code: u.user_id_code })}
+                            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                            title="Permanently Delete ID Card"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

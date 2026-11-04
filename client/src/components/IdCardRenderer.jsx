@@ -1,6 +1,7 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
+import { formatDateIST } from '../utils/date';
 
 const VERIFY_BASE = typeof import.meta !== 'undefined' && import.meta.env?.VITE_VERIFY_BASE_URL
   ? import.meta.env.VITE_VERIFY_BASE_URL
@@ -55,7 +56,7 @@ function IdCardFront({ card, settings, cardRef }) {
     : (card.user_category && card.user_category !== 'Coworking Member' ? card.user_category : 'WorkDen Member');
 
   const expiryFormatted = card.expiry_date
-    ? new Date(card.expiry_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? formatDateIST(card.expiry_date)
     : 'Valid 1 Year';
 
   return (
@@ -367,11 +368,11 @@ function IdCardBack({ card, settings, cardRef }) {
   const signatoryTitle = s.authorized_signatory || 'Director of Operations';
 
   const issueDateFormatted = card.issue_date
-    ? new Date(card.issue_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? formatDateIST(card.issue_date)
     : '—';
 
   const expiryDateFormatted = card.expiry_date
-    ? new Date(card.expiry_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? formatDateIST(card.expiry_date)
     : '—';
 
   return (

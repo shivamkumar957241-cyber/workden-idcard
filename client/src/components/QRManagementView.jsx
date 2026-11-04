@@ -10,6 +10,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { authFetch } from '../api';
+import { formatIST } from '../utils/date';
 
 export default function QRManagementView({ onSimulateScan }) {
   const [tokens, setTokens] = useState([]);
@@ -186,8 +187,8 @@ export default function QRManagementView({ onSimulateScan }) {
                         {t.scan_count || 0}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-[#888]">
-                      {t.last_scanned_at ? new Date(t.last_scanned_at).toLocaleString('en-IN') : 'Never Scanned'}
+                    <td className="py-3 px-4 text-[#888] font-mono text-xs">
+                      {t.last_scanned_at ? formatIST(t.last_scanned_at) : 'Never Scanned'}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${

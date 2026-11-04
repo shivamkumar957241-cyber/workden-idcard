@@ -15,6 +15,7 @@ import {
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import IdCardRenderer from './IdCardRenderer';
+import { formatDateIST } from '../utils/date';
 
 export default function MyIdCardView({
   currentUser,
@@ -211,11 +212,11 @@ export default function MyIdCardView({
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500">Issue Date</span>
-                <span className="font-medium text-slate-800">{currentUser.issue_date || 'N/A'}</span>
+                <span className="font-medium text-slate-800">{currentUser.issue_date ? formatDateIST(currentUser.issue_date) : 'N/A'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500">Expiration Date</span>
-                <span className="font-bold text-red-600">{currentUser.expiry_date || 'Permanent'}</span>
+                <span className="font-bold text-red-600">{currentUser.expiry_date ? formatDateIST(currentUser.expiry_date) : 'Permanent'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500">Card Version</span>

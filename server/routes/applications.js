@@ -46,7 +46,9 @@ router.post('/', requireAuth, (req, res) => {
       designation || null, department || null, residential_address || null,
       father_name || null, dob || null, gender || null,
       joining_date || null, employment_type || null, work_location || null,
-      user_category || 'WorkDen Member', current_plan || '₹499 – Full Access', remarks || null
+      appType === 'STAFF' ? null : (user_category || 'WorkDen Member'),
+      appType === 'STAFF' ? null : (current_plan || '₹499 – Full Access'),
+      remarks || null
     );
 
     logAudit('APPLICATION_SUBMIT', req.user.email, 'APPLICATION', result.lastInsertRowid,
@@ -285,6 +287,31 @@ router.post('/:id/reject', requireAuth, requireAdmin, (req, res) => {
     res.json({ success: true, message: 'Application rejected.' });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Server error.' });
+  }
+});
+
+// DELETE /api/applications/:id - Permanently delete an application
+router.delete('/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const appId = parseInt(req.params.id);
+    const app = db.prepare('SELECT id, full_name, card_id FROM id_applications WHERE id = ?').get(appId);
+    if (!app) return res.status(404).json({ success: false, error: 'Application not found.' });
+
+    db.transaction(() => {
+      // If card was issued, clean up card as well
+      if (app.card_id) {
+        db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(app.card_id);
+        db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(app.card_id);
+        db.prepare('DELETE FROM id_card_records WHERE id = ?').run(app.card_id);
+      }
+      db.prepare('DELETE FROM id_applications WHERE id = ?').run(appId);
+      logAudit('APPLICATION_DELETE', req.user.email, 'APPLICATION', appId, `Permanently deleted application for ${app.full_name}`, req.ip);
+    })();
+
+    res.json({ success: true, message: `Application for ${app.full_name} permanently deleted.` });
+  } catch (err) {
+    console.error('Error deleting application:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

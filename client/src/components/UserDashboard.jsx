@@ -5,6 +5,7 @@ import {
   Shield, Calendar, Phone, Mail, Building2, Loader2, RefreshCw, Check
 } from 'lucide-react';
 import { authFetch, getToken } from '../api';
+import { formatIST, formatDateIST } from '../utils/date';
 import IdCardRenderer from './IdCardRenderer';
 import IdCardPreviewModal from './IdCardPreviewModal';
 import PublicVerifyPage from './PublicVerifyPage';
@@ -129,9 +130,14 @@ export default function UserDashboard({ user, onLogout }) {
     }
     setSubmitting(true);
     try {
+      const payload = {
+        ...form,
+        user_category: form.application_type === 'STAFF' ? null : form.user_category,
+        current_plan: form.application_type === 'STAFF' ? null : form.current_plan,
+      };
       const res = await authFetch('/api/applications', {
         method: 'POST',
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
       const json = await res.json();
       if (json.success) {
@@ -270,7 +276,7 @@ export default function UserDashboard({ user, onLogout }) {
                     <span className="text-[11px] font-bold text-[#F5C542] uppercase tracking-wider">Credential Status</span>
                     <h3 className="text-white font-bold text-lg mt-0.5">WorkDen ID Card Application</h3>
                     <p className="text-[#B5B5B5] text-xs mt-0.5">
-                      Submitted on {new Date(application.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      Submitted on {formatDateIST(application.created_at)}
                     </p>
                   </div>
                   {(() => {
@@ -314,7 +320,7 @@ export default function UserDashboard({ user, onLogout }) {
                           {item.step}
                         </p>
                         {item.date && (
-                          <p className="text-[#888] text-xs">{new Date(item.date).toLocaleDateString('en-IN')}</p>
+                          <p className="text-[#888] text-xs">{formatDateIST(item.date)}</p>
                         )}
                       </div>
                     </div>
@@ -402,8 +408,10 @@ export default function UserDashboard({ user, onLogout }) {
                     {[
                       { label: 'ID NUMBER', value: application.id_number },
                       { label: 'CARD TYPE', value: application.application_type === 'STAFF' ? 'Staff ID' : 'Member ID' },
-                      { label: 'CURRENT PLAN', value: application.current_plan || 'Active Member' },
-                      { label: 'EXPIRY DATE', value: application.expiry_date ? new Date(application.expiry_date).toLocaleDateString('en-IN') : '—' },
+                      application.application_type === 'STAFF'
+                        ? { label: 'DEPARTMENT', value: application.department || 'Administration' }
+                        : { label: 'CURRENT PLAN', value: application.current_plan || 'Active Member' },
+                      { label: 'EXPIRY DATE', value: formatDateIST(application.expiry_date) },
                     ].map(({ label, value }) => (
                       <div key={label} className="bg-[#222222] p-3 rounded-xl border border-[#353535]">
                         <p className="text-[#888] text-[10px] font-bold tracking-wider mb-1">{label}</p>

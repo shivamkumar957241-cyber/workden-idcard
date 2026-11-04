@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Shield, RefreshCw, Search } from 'lucide-react';
 import { authFetch } from '../api';
+import { formatIST } from '../utils/date';
 
 export default function AuditLogsView() {
   const [logs, setLogs] = useState([]);
@@ -76,7 +77,7 @@ export default function AuditLogsView() {
           <table className="w-full text-left text-xs text-[#B5B5B5]">
             <thead className="bg-[#121212] text-[#888] font-bold uppercase text-[10px] tracking-wider border-b border-[#353535]">
               <tr>
-                <th className="py-3.5 px-4">Timestamp</th>
+                <th className="py-3.5 px-4">Timestamp (IST - GMT+5:30)</th>
                 <th className="py-3.5 px-4">Action</th>
                 <th className="py-3.5 px-4">Performed By</th>
                 <th className="py-3.5 px-4">Target ID</th>
@@ -99,8 +100,8 @@ export default function AuditLogsView() {
               ) : (
                 filtered.map((l) => (
                   <tr key={l.id} className="hover:bg-[#222222]/60 transition">
-                    <td className="py-3 px-4 font-mono text-[#888]">
-                      {new Date(l.created_at).toLocaleString('en-IN')}
+                    <td className="py-3 px-4 font-mono text-[#F5C542] text-[11px] whitespace-nowrap">
+                      {formatIST(l.created_at)}
                     </td>
                     <td className="py-3 px-4">
                       <span className="font-mono font-bold text-[#FFD84D] bg-[#F5C542]/10 border border-[#F5C542]/30 px-2 py-0.5 rounded text-[11px]">

@@ -8,8 +8,10 @@ import {
   FileSpreadsheet,
   ChevronLeft,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
+import { formatDateIST } from '../utils/date';
 
 export default function StaffTable({
   staffList = [],
@@ -23,7 +25,8 @@ export default function StaffTable({
   onPreviewCard,
   onApproveCard,
   onOpenStatusModal,
-  onExportCsv
+  onExportCsv,
+  onDeleteCard
 }) {
   const [selectedStaffIds, setSelectedStaffIds] = useState([]);
 
@@ -212,11 +215,11 @@ export default function StaffTable({
                       {s.department}
                     </td>
                     <td className="py-3 px-4 text-[#888]">
-                      {s.issue_date || s.joining_date}
+                      {s.issue_date ? formatDateIST(s.issue_date) : (s.joining_date ? formatDateIST(s.joining_date) : 'N/A')}
                     </td>
                     <td className="py-3 px-4">
                       <span className={s.card_status === 'EXPIRED' ? 'text-red-400 font-bold' : 'text-[#888]'}>
-                        {s.expiry_date || 'Permanent'}
+                        {s.expiry_date ? formatDateIST(s.expiry_date) : 'Permanent'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -263,6 +266,15 @@ export default function StaffTable({
                         >
                           <span className="text-xs font-bold leading-none">•••</span>
                         </button>
+                        {onDeleteCard && (
+                          <button
+                            onClick={() => onDeleteCard({ ...s, id: s.card_id || s.id, entity_code: s.staff_id })}
+                            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                            title="Permanently Delete ID Card"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

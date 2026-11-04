@@ -13,6 +13,7 @@ import {
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import IdCardRenderer from './IdCardRenderer';
+import { formatDateIST } from '../utils/date';
 
 export default function IdCardPreviewModal({
   card,
@@ -343,11 +344,11 @@ export default function IdCardPreviewModal({
               </div>
               <div className="flex justify-between py-1 border-b border-white/5">
                 <span className="text-slate-400">Issue Date</span>
-                <span className="text-slate-200">{card.issue_date || 'N/A'}</span>
+                <span className="text-slate-200">{card.issue_date ? formatDateIST(card.issue_date) : 'N/A'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-white/5">
                 <span className="text-slate-400">Expiry Date</span>
-                <span className="font-bold text-emerald-400">{card.expiry_date || 'Permanent'}</span>
+                <span className="font-bold text-emerald-400">{card.expiry_date ? formatDateIST(card.expiry_date) : 'Permanent'}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">QR Token</span>

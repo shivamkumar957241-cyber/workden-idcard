@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import API_BASE from '../api';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
+import { formatDateIST } from '../utils/date';
 
 const STATUS_CONFIG = {
   ACTIVE: {
@@ -88,14 +89,7 @@ const STATUS_CONFIG = {
 };
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-  } catch {
-    return dateStr;
-  }
+  return formatDateIST(dateStr);
 };
 
 export default function PublicVerifyPage({ token: propToken, onBack }) {

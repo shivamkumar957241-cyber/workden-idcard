@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   FileText, Clock, CheckCircle2, XCircle, Eye, Check, X,
-  AlertCircle, Loader2, Calendar, User, Phone, Mail, Building2, RefreshCw
+  AlertCircle, Loader2, Calendar, User, Phone, Mail, Building2, RefreshCw, Trash2
 } from 'lucide-react';
 import { authFetch } from '../api';
+import { formatDateIST } from '../utils/date';
 
 const STATUS_BADGE = {
   PENDING:  { label: 'Pending Review', class: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
@@ -80,6 +81,27 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
       }
     } catch { showMsg('Server error', 'error'); }
     finally { setProcessing(false); }
+  };
+
+  const handleDeleteApp = async (appId, name) => {
+    if (!window.confirm(`Are you sure you want to permanently delete the application for "${name}"?\n\nThis action cannot be undone.`)) return;
+    setProcessing(true);
+    try {
+      const res = await authFetch(`/api/applications/${appId}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        showMsg(json.message || 'Application deleted successfully.');
+        setSelectedApp(null);
+        fetchApplications();
+        onApprovalSuccess?.();
+      } else {
+        showMsg(json.error || 'Failed to delete application', 'error');
+      }
+    } catch {
+      showMsg('Server error while deleting application', 'error');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const pending = applications.filter(a => a.status === 'PENDING');
@@ -179,7 +201,7 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
                       </div>
                       <div className="flex items-center gap-1 mt-1 text-[#666] text-[11px]">
                         <Calendar className="w-3 h-3" />
-                        Applied on {new Date(app.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        Applied on {formatDateIST(app.created_at)}
                       </div>
                     </div>
                   </div>
@@ -187,7 +209,8 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-shrink-0 mt-2 sm:mt-0">
                     <button onClick={() => setSelectedApp(selectedApp?.id === app.id ? null : app)}
-                      className="p-2 text-[#888] hover:text-[#F5C542] hover:bg-[#222222] rounded-lg transition-all border border-[#353535]">
+                      className="p-2 text-[#888] hover:text-[#F5C542] hover:bg-[#222222] rounded-lg transition-all border border-[#353535]"
+                      title="View Details">
                       <Eye className="w-4 h-4" />
                     </button>
                     {app.status === 'PENDING' && (
@@ -209,6 +232,14 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
                         </button>
                       </>
                     )}
+                    <button
+                      onClick={() => handleDeleteApp(app.id, app.full_name)}
+                      disabled={processing}
+                      className="p-2 text-stone-400 hover:text-rose-400 hover:bg-rose-500/15 rounded-lg transition-all border border-[#353535]"
+                      title="Permanently Delete Application"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
@@ -217,12 +248,15 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
                   <div className="mt-4 pt-4 border-t border-[#353535] grid grid-cols-2 md:grid-cols-3 gap-3">
                     {[
                       { label: 'Department', value: app.department },
+                      { label: 'Designation', value: app.designation },
                       { label: 'Work Location', value: app.work_location },
                       { label: 'Employment Type', value: app.employment_type },
-                      { label: 'User Category', value: app.user_category },
-                      { label: 'Current Plan', value: app.current_plan },
-                      { label: 'Joining Date', value: app.joining_date },
-                      { label: 'Date of Birth', value: app.dob },
+                      ...(app.application_type !== 'STAFF' ? [
+                        { label: 'User Category', value: app.user_category },
+                        { label: 'Current Plan', value: app.current_plan },
+                      ] : []),
+                      { label: 'Joining Date', value: formatDateIST(app.joining_date) },
+                      { label: 'Date of Birth', value: formatDateIST(app.dob) },
                       { label: 'Gender', value: app.gender },
                       { label: "Father's Name", value: app.father_name },
                     ].filter(f => f.value).map(({ label, value }) => (

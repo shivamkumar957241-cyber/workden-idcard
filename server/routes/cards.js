@@ -232,4 +232,38 @@ router.get('/:id/history', (req, res) => {
   }
 });
 
+// DELETE /api/cards/:id - Permanently delete an ID card record and associated tokens & history
+router.delete('/:id', (req, res) => {
+  try {
+    const cardId = req.params.id;
+    const card = db.prepare('SELECT * FROM id_card_records WHERE id = ?').get(cardId);
+    if (!card) {
+      return res.status(404).json({ success: false, error: 'ID Card record not found.' });
+    }
+
+    db.transaction(() => {
+      // 1. Delete QR tokens
+      db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(cardId);
+      // 2. Delete card history
+      db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(cardId);
+      // 3. Clear card_id from id_applications if linked
+      db.prepare('UPDATE id_applications SET card_id = NULL, status = "REJECTED", rejection_reason = "Card deleted by admin" WHERE card_id = ?').run(cardId);
+      // 4. Delete the card record
+      db.prepare('DELETE FROM id_card_records WHERE id = ?').run(cardId);
+      // 5. If profile_type is STAFF / USER, delete or update profile status
+      if (card.profile_type === 'STAFF') {
+        db.prepare('UPDATE staff_profiles SET employment_status = "Terminated" WHERE id = ?').run(card.profile_id);
+      } else if (card.profile_type === 'USER') {
+        db.prepare('UPDATE user_id_profiles SET user_status = "Inactive" WHERE id = ?').run(card.profile_id);
+      }
+      logAudit('CARD_DELETED', req.user?.email || 'Admin', 'CARD', cardId, `Permanently deleted ID Card ${card.entity_code} (${card.card_number})`, req.ip);
+    })();
+
+    res.json({ success: true, message: `ID Card ${card.entity_code} permanently deleted.` });
+  } catch (err) {
+    console.error('Error deleting card:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

@@ -182,6 +182,30 @@ export default function AdminDashboard({ user, onLogout }) {
     if (json.success) { fetchSettings(); showToast('Designation removed.'); }
   };
 
+  const handleDeleteCard = async (card) => {
+    const cardId = card.card_id || card.id;
+    const name = card.full_name || card.entity_code || 'this record';
+    if (!window.confirm(`Are you sure you want to PERMANENTLY delete the ID Card for "${name}" (${card.entity_code || card.card_number || ''})?\n\nThis will permanently delete the ID card, QR verification token, and card history.`)) {
+      return;
+    }
+
+    try {
+      const res = await authFetch(`/api/cards/${cardId}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        showToast(json.message || 'ID Card permanently deleted.');
+        fetchAllCards();
+        fetchStaff();
+        fetchUsers();
+      } else {
+        showToast(json.error || 'Failed to delete card', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Network error while deleting card', 'error');
+    }
+  };
+
   const navGroups = [...new Set(NAV_SECTIONS.map(s => s.group))];
 
   const renderSection = () => {
@@ -195,7 +219,8 @@ export default function AdminDashboard({ user, onLogout }) {
           onPreviewCard={c => setPreviewCard({ ...c, profile_type: 'STAFF', entity_code: c.staff_id, mobile: c.mobile, phone: c.mobile })}
           onApproveCard={id => handleApprove(id, 'STAFF')}
           onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
-          onExportCsv={() => window.open('/api/cards/export')} />;
+          onExportCsv={() => window.open('/api/cards/export')}
+          onDeleteCard={handleDeleteCard} />;
       case 'user-cards':
         return <UserTable userList={userList} loading={loading} pagination={userPagination} filters={userFilters}
           onFilterChange={(k, v) => setUserFilters(p => ({ ...p, [k]: v, page: 1 }))}
@@ -203,13 +228,15 @@ export default function AdminDashboard({ user, onLogout }) {
           onPreviewCard={c => setPreviewCard({ ...c, profile_type: 'USER', entity_code: c.user_id_code, mobile: c.mobile, phone: c.mobile })}
           onApproveCard={id => handleApprove(id, 'USER')}
           onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
-          onExportCsv={() => window.open('/api/cards/export')} />;
+          onExportCsv={() => window.open('/api/cards/export')}
+          onDeleteCard={handleDeleteCard} />;
       case 'all-issued':
         return <UnifiedCardsTable title="All Issued ID Cards" subtitle="Complete directory of all identity cards" icon={Layers}
           cards={unifiedCards} onPreviewCard={c => setPreviewCard({ ...c, mobile: c.mobile, phone: c.mobile })}
           onApproveCard={(id, t) => handleApprove(id, t)}
           onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
-          onExportCsv={() => window.open('/api/cards/export')} />;
+          onExportCsv={() => window.open('/api/cards/export')}
+          onDeleteCard={handleDeleteCard} />;
       case 'applications':
       case 'pending-approvals':
         return <ApplicationsView initialStatus="PENDING" onApprovalSuccess={() => { fetchAllCards(); fetchStaff(); fetchUsers(); fetchCounts(); showToast('Application processed successfully!'); }} />;
@@ -221,14 +248,16 @@ export default function AdminDashboard({ user, onLogout }) {
           onPreviewCard={c => setPreviewCard(c)}
           onApproveCard={(id, t) => handleApprove(id, t)}
           onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'RENEW', targetStatus: 'ACTIVE' })}
-          onExportCsv={() => window.open('/api/cards/export')} />;
+          onExportCsv={() => window.open('/api/cards/export')}
+          onDeleteCard={handleDeleteCard} />;
       case 'suspended-revoked':
         return <UnifiedCardsTable title="Revoked / Suspended Cards" subtitle="Cards that are disabled or permanently revoked" icon={Ban}
           cards={unifiedCards.filter(c => c.status === 'SUSPENDED' || c.status === 'REVOKED')}
           onPreviewCard={c => setPreviewCard(c)}
           onApproveCard={(id, t) => handleApprove(id, t)}
           onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'ACTIVE' })}
-          onExportCsv={() => window.open('/api/cards/export')} />;
+          onExportCsv={() => window.open('/api/cards/export')}
+          onDeleteCard={handleDeleteCard} />;
       case 'design-settings':
         return <SettingsView settings={settings} departments={departments} designations={designations}
           onUpdateSettings={handleUpdateSettings} onAddDepartment={handleAddDepartment}

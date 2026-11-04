@@ -13,6 +13,7 @@ import {
   RefreshCw,
   QrCode
 } from 'lucide-react';
+import { formatIST, formatDateIST } from '../utils/date';
 
 export default function PublicVerificationView({ token, onBack }) {
   const [data, setData] = useState(null);
@@ -216,14 +217,14 @@ export default function PublicVerificationView({ token, onBack }) {
                     <span className="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">
                       Issue Date
                     </span>
-                    <span className="text-slate-200">{data.issue_date || 'N/A'}</span>
+                    <span className="text-slate-200">{data.issue_date ? formatDateIST(data.issue_date) : 'N/A'}</span>
                   </div>
 
                   <div className="bg-slate-900/70 p-3 rounded-2xl border border-slate-700/50">
                     <span className="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">
                       Card Expiry
                     </span>
-                    <span className="font-bold text-red-400">{data.expiry_date || 'Permanent'}</span>
+                    <span className="font-bold text-red-400">{data.expiry_date ? formatDateIST(data.expiry_date) : 'Permanent'}</span>
                   </div>
                 </div>
 
@@ -238,7 +239,7 @@ export default function PublicVerificationView({ token, onBack }) {
                   </p>
                   <div className="text-[9.5px] font-mono text-slate-500 pt-1 flex items-center justify-between">
                     <span>Scan Counter: {data.scan_count}</span>
-                    <span>Server Verified: {new Date(data.server_verified_at).toLocaleTimeString()}</span>
+                    <span>Server Verified (IST): {formatIST(data.server_verified_at)}</span>
                   </div>
                 </div>
 
