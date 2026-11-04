@@ -439,16 +439,16 @@ function IdCardBack({ card, settings, cardRef }) {
         </div>
       </div>
 
-      {/* Usage Instructions Area */}
-      <div style={{ padding: '5px 14px 0 14px' }}>
-        <div style={{ color: accentColor, fontSize: 6.8, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 2.5 }}>
+      {/* Usage Instructions Area - Renders up to 5 rules configured in Admin Panel */}
+      <div style={{ padding: '4px 14px 0 14px' }}>
+        <div style={{ color: accentColor, fontSize: 6.8, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 2 }}>
           TERMS OF USE & GUIDELINES
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {rules.slice(0, 3).map((rule, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-              <span style={{ color: accentColor, fontSize: 7, lineHeight: 1, marginTop: 1 }}>•</span>
-              <span style={{ color: 'rgba(255,255,255,0.82)', fontSize: 6.5, lineHeight: 1.25 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {rules.slice(0, 5).map((rule, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 3.5 }}>
+              <span style={{ color: accentColor, fontSize: 6.5, lineHeight: 1, marginTop: 1 }}>•</span>
+              <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 6.2, lineHeight: 1.18 }}>
                 {rule}
               </span>
             </div>
@@ -459,18 +459,18 @@ function IdCardBack({ card, settings, cardRef }) {
       {/* Lost Card Instructions Area - Positioned neatly with comfortable spacing */}
       <div
         style={{
-          margin: '9px 14px 0 14px',
-          padding: '4.5px 9px',
+          margin: '5px 14px 0 14px',
+          padding: '4px 8px',
           borderRadius: 6,
           background: 'rgba(245,197,66,0.08)',
           border: '1px solid rgba(245,197,66,0.28)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
         }}
       >
-        <div style={{ color: accentColor, fontSize: 6.5, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 1.5 }}>
+        <div style={{ color: accentColor, fontSize: 6.5, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 1 }}>
           LOST CARD INSTRUCTIONS
         </div>
-        <div style={{ color: 'rgba(255,255,255,0.92)', fontSize: 6.5, lineHeight: 1.25 }}>
+        <div style={{ color: 'rgba(255,255,255,0.92)', fontSize: 6.2, lineHeight: 1.2 }}>
           {lostInstructions}
         </div>
       </div>

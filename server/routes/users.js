@@ -447,4 +447,33 @@ router.post('/:id/renew', (req, res) => {
   }
 });
 
+// DELETE /api/users/:id - Permanently purge user profile & all associated records from database
+router.delete('/:id', (req, res) => {
+  try {
+    const userId = req.params.id;
+    const userProfile = db.prepare('SELECT * FROM user_id_profiles WHERE id = ?').get(userId);
+    if (!userProfile) {
+      return res.status(404).json({ success: false, error: 'User profile not found.' });
+    }
+
+    db.transaction(() => {
+      const cards = db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'USER' AND profile_id = ?").all(userId);
+      for (const c of cards) {
+        db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(c.id);
+        db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(c.id);
+        db.prepare('DELETE FROM id_applications WHERE card_id = ?').run(c.id);
+      }
+      db.prepare("DELETE FROM id_card_records WHERE profile_type = 'USER' AND profile_id = ?").run(userId);
+      db.prepare("DELETE FROM id_applications WHERE application_type = 'USER' AND (email = ? OR mobile = ? OR profile_id = ?)").run(userProfile.email, userProfile.mobile, userId);
+      db.prepare('DELETE FROM user_id_profiles WHERE id = ?').run(userId);
+      logAudit('USER_DELETED', req.user?.email || 'Admin', 'USER', userId, `Permanently purged user ${userProfile.full_name} (${userProfile.user_id_code}) from database`, req.ip);
+    })();
+
+    res.json({ success: true, message: `User ${userProfile.full_name} permanently purged from database.` });
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

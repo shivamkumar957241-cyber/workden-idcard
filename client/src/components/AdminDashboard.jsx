@@ -184,25 +184,33 @@ export default function AdminDashboard({ user, onLogout }) {
 
   const handleDeleteCard = async (card) => {
     const cardId = card.card_id || card.id;
-    const name = card.full_name || card.entity_code || 'this record';
-    if (!window.confirm(`Are you sure you want to PERMANENTLY delete the ID Card for "${name}" (${card.entity_code || card.card_number || ''})?\n\nThis will permanently delete the ID card, QR verification token, and card history.`)) {
+    const name = card.full_name || card.entity_code || card.staff_id || card.user_id_code || 'this record';
+    if (!window.confirm(`Are you sure you want to PERMANENTLY delete the record for "${name}"?\n\nThis will completely purge this person, ID card, QR verification token, and application from all database tables.`)) {
       return;
     }
 
     try {
-      const res = await authFetch(`/api/cards/${cardId}`, { method: 'DELETE' });
+      let endpoint = `/api/cards/${cardId}`;
+      if (card.staff_id || card.profile_type === 'STAFF') {
+        endpoint = `/api/staff/${card.id || card.profile_id || cardId}`;
+      } else if (card.user_id_code || card.profile_type === 'USER') {
+        endpoint = `/api/users/${card.id || card.profile_id || cardId}`;
+      }
+
+      const res = await authFetch(endpoint, { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
-        showToast(json.message || 'ID Card permanently deleted.');
+        showToast(json.message || 'Record permanently deleted.');
         fetchAllCards();
         fetchStaff();
         fetchUsers();
+        fetchCounts();
       } else {
-        showToast(json.error || 'Failed to delete card', 'error');
+        showToast(json.error || 'Failed to delete record', 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Network error while deleting card', 'error');
+      showToast('Network error while deleting record', 'error');
     }
   };
 

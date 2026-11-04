@@ -294,7 +294,7 @@ router.post('/:id/reject', requireAuth, requireAdmin, (req, res) => {
 router.delete('/:id', requireAuth, requireAdmin, (req, res) => {
   try {
     const appId = parseInt(req.params.id);
-    const app = db.prepare('SELECT id, full_name, card_id FROM id_applications WHERE id = ?').get(appId);
+    const app = db.prepare('SELECT id, full_name, email, mobile, card_id, profile_id, application_type FROM id_applications WHERE id = ?').get(appId);
     if (!app) return res.status(404).json({ success: false, error: 'Application not found.' });
 
     db.transaction(() => {
@@ -304,8 +304,15 @@ router.delete('/:id', requireAuth, requireAdmin, (req, res) => {
         db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(app.card_id);
         db.prepare('DELETE FROM id_card_records WHERE id = ?').run(app.card_id);
       }
+      if (app.profile_id) {
+        if (app.application_type === 'STAFF') {
+          db.prepare('DELETE FROM staff_profiles WHERE id = ?').run(app.profile_id);
+        } else if (app.application_type === 'USER') {
+          db.prepare('DELETE FROM user_id_profiles WHERE id = ?').run(app.profile_id);
+        }
+      }
       db.prepare('DELETE FROM id_applications WHERE id = ?').run(appId);
-      logAudit('APPLICATION_DELETE', req.user.email, 'APPLICATION', appId, `Permanently deleted application for ${app.full_name}`, req.ip);
+      logAudit('APPLICATION_DELETE', req.user.email, 'APPLICATION', appId, `Permanently purged application for ${app.full_name}`, req.ip);
     })();
 
     res.json({ success: true, message: `Application for ${app.full_name} permanently deleted.` });

@@ -232,34 +232,69 @@ router.get('/:id/history', (req, res) => {
   }
 });
 
-// DELETE /api/cards/:id - Permanently delete an ID card record and associated tokens & history
+// DELETE /api/cards/:id - Permanently purge an ID card record and all associated records from database
 router.delete('/:id', (req, res) => {
   try {
-    const cardId = req.params.id;
-    const card = db.prepare('SELECT * FROM id_card_records WHERE id = ?').get(cardId);
+    const targetId = req.params.id;
+    let card = db.prepare('SELECT * FROM id_card_records WHERE id = ?').get(targetId);
+    let staff = null;
+    let userProf = null;
+
     if (!card) {
-      return res.status(404).json({ success: false, error: 'ID Card record not found.' });
+      staff = db.prepare('SELECT * FROM staff_profiles WHERE id = ?').get(targetId);
+      if (!staff) {
+        userProf = db.prepare('SELECT * FROM user_id_profiles WHERE id = ?').get(targetId);
+      }
+    } else {
+      if (card.profile_type === 'STAFF') {
+        staff = db.prepare('SELECT * FROM staff_profiles WHERE id = ?').get(card.profile_id);
+      } else if (card.profile_type === 'USER') {
+        userProf = db.prepare('SELECT * FROM user_id_profiles WHERE id = ?').get(card.profile_id);
+      }
+    }
+
+    if (!card && !staff && !userProf) {
+      return res.status(404).json({ success: false, error: 'Record not found in database.' });
     }
 
     db.transaction(() => {
-      // 1. Delete QR tokens
-      db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(cardId);
-      // 2. Delete card history
-      db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(cardId);
-      // 3. Clear card_id from id_applications if linked
-      db.prepare("UPDATE id_applications SET card_id = NULL, status = 'REJECTED', rejection_reason = 'Card deleted by admin' WHERE card_id = ?").run(cardId);
-      // 4. Delete the card record
-      db.prepare('DELETE FROM id_card_records WHERE id = ?').run(cardId);
-      // 5. If profile_type is STAFF / USER, delete or update profile status
-      if (card.profile_type === 'STAFF') {
-        db.prepare("UPDATE staff_profiles SET employment_status = 'Terminated' WHERE id = ?").run(card.profile_id);
-      } else if (card.profile_type === 'USER') {
-        db.prepare("UPDATE user_id_profiles SET user_status = 'Inactive' WHERE id = ?").run(card.profile_id);
+      const cardId = card ? card.id : null;
+      if (cardId) {
+        db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(cardId);
+        db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(cardId);
+        db.prepare('DELETE FROM id_applications WHERE card_id = ?').run(cardId);
+        db.prepare('DELETE FROM id_card_records WHERE id = ?').run(cardId);
       }
-      logAudit('CARD_DELETED', req.user?.email || 'Admin', 'CARD', cardId, `Permanently deleted ID Card ${card.entity_code} (${card.card_number})`, req.ip);
+
+      if (staff) {
+        const otherCards = db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").all(staff.id);
+        for (const c of otherCards) {
+          db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(c.id);
+          db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(c.id);
+          db.prepare('DELETE FROM id_applications WHERE card_id = ?').run(c.id);
+        }
+        db.prepare("DELETE FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").run(staff.id);
+        db.prepare("DELETE FROM id_applications WHERE application_type = 'STAFF' AND (email = ? OR mobile = ? OR profile_id = ?)").run(staff.email, staff.mobile, staff.id);
+        db.prepare('DELETE FROM staff_profiles WHERE id = ?').run(staff.id);
+      }
+
+      if (userProf) {
+        const otherCards = db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'USER' AND profile_id = ?").all(userProf.id);
+        for (const c of otherCards) {
+          db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(c.id);
+          db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(c.id);
+          db.prepare('DELETE FROM id_applications WHERE card_id = ?').run(c.id);
+        }
+        db.prepare("DELETE FROM id_card_records WHERE profile_type = 'USER' AND profile_id = ?").run(userProf.id);
+        db.prepare("DELETE FROM id_applications WHERE application_type = 'USER' AND (email = ? OR mobile = ? OR profile_id = ?)").run(userProf.email, userProf.mobile, userProf.id);
+        db.prepare('DELETE FROM user_id_profiles WHERE id = ?').run(userProf.id);
+      }
+
+      logAudit('RECORD_PERMANENT_DELETE', req.user?.email || 'Admin', 'PURGE', targetId,
+        `Permanently purged ${staff?.full_name || userProf?.full_name || card?.entity_code} from all database tables`, req.ip);
     })();
 
-    res.json({ success: true, message: `ID Card ${card.entity_code} permanently deleted.` });
+    res.json({ success: true, message: 'Record permanently deleted from all database tables.' });
   } catch (err) {
     console.error('Error deleting card:', err);
     res.status(500).json({ success: false, error: err.message });

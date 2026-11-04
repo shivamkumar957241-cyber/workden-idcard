@@ -601,4 +601,33 @@ router.post('/:id/replace', (req, res) => {
   }
 });
 
+// DELETE /api/staff/:id - Permanently purge staff profile & all associated records from database
+router.delete('/:id', (req, res) => {
+  try {
+    const staffId = req.params.id;
+    const staff = db.prepare('SELECT * FROM staff_profiles WHERE id = ?').get(staffId);
+    if (!staff) {
+      return res.status(404).json({ success: false, error: 'Staff profile not found.' });
+    }
+
+    db.transaction(() => {
+      const cards = db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").all(staffId);
+      for (const c of cards) {
+        db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(c.id);
+        db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(c.id);
+        db.prepare('DELETE FROM id_applications WHERE card_id = ?').run(c.id);
+      }
+      db.prepare("DELETE FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").run(staffId);
+      db.prepare("DELETE FROM id_applications WHERE application_type = 'STAFF' AND (email = ? OR mobile = ? OR profile_id = ?)").run(staff.email, staff.mobile, staffId);
+      db.prepare('DELETE FROM staff_profiles WHERE id = ?').run(staffId);
+      logAudit('STAFF_DELETED', req.user?.email || 'Admin', 'STAFF', staffId, `Permanently purged staff ${staff.full_name} (${staff.staff_id}) from database`, req.ip);
+    })();
+
+    res.json({ success: true, message: `Staff ${staff.full_name} permanently purged from database.` });
+  } catch (err) {
+    console.error('Error deleting staff:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
