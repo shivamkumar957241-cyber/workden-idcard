@@ -232,10 +232,10 @@ export default function IdCardPreviewModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-3 sm:p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 bg-[#0B0B0B]">
+        <div className="p-3 sm:p-6 overflow-y-auto flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-6 bg-[#0B0B0B]">
           
           {/* Card Presentation Area (Left / Center) */}
-          <div className="lg:col-span-7 flex flex-col items-center justify-center p-3 sm:p-5 bg-[#171717] rounded-2xl border border-[#353535] shadow-inner overflow-hidden">
+          <div className="w-full lg:col-span-7 flex flex-col items-center p-3 sm:p-5 bg-[#171717] rounded-2xl border border-[#353535] shadow-inner shrink-0">
             {/* View Controls */}
             <div className="flex items-center gap-1 sm:gap-2 mb-4 sm:mb-6 bg-[#111111] p-1 sm:p-1.5 rounded-xl border border-[#353535] max-w-full overflow-x-auto">
               <button
@@ -272,18 +272,20 @@ export default function IdCardPreviewModal({
             </div>
 
             {/* The Cards Rendering Container - Responsive Scaling */}
-            <div className="print-card-area w-full max-w-full flex flex-col items-center justify-center gap-4 sm:gap-6 py-1 overflow-hidden">
+            <div className="print-card-area w-full max-w-full flex flex-col items-center justify-center gap-5 sm:gap-6 py-2 shrink-0">
               {(activeSide === 'front' || activeSide === 'both') && (
                 <div className="flex flex-col items-center justify-center transition-all duration-300 w-full">
-                  <div className="scale-[0.82] min-[390px]:scale-[0.92] min-[440px]:scale-100 origin-center -my-3 min-[390px]:-my-1 min-[440px]:my-0 transition-transform shadow-2xl rounded-2xl">
-                    <IdCardRenderer
-                      card={card}
-                      settings={settings}
-                      side="front"
-                      cardRef={frontRef}
-                    />
+                  <div className="w-[340px] max-w-full flex justify-center">
+                    <div className="scale-[0.80] min-[390px]:scale-[0.90] min-[440px]:scale-100 origin-top h-[180px] min-[390px]:h-[200px] min-[440px]:h-[220px] transition-transform">
+                      <IdCardRenderer
+                        card={card}
+                        settings={settings}
+                        side="front"
+                        cardRef={frontRef}
+                      />
+                    </div>
                   </div>
-                  <div className="text-center mt-2.5 text-xs font-semibold text-slate-400">
+                  <div className="text-center mt-3 text-xs font-semibold text-slate-400">
                     Front Side (Standard CR80)
                   </div>
                 </div>
@@ -291,15 +293,17 @@ export default function IdCardPreviewModal({
 
               {(activeSide === 'back' || activeSide === 'both') && (
                 <div className="flex flex-col items-center justify-center transition-all duration-300 w-full">
-                  <div className="scale-[0.82] min-[390px]:scale-[0.92] min-[440px]:scale-100 origin-center -my-3 min-[390px]:-my-1 min-[440px]:my-0 transition-transform shadow-2xl rounded-2xl">
-                    <IdCardRenderer
-                      card={card}
-                      settings={settings}
-                      side="back"
-                      cardRef={backRef}
-                    />
+                  <div className="w-[340px] max-w-full flex justify-center">
+                    <div className="scale-[0.80] min-[390px]:scale-[0.90] min-[440px]:scale-100 origin-top h-[180px] min-[390px]:h-[200px] min-[440px]:h-[220px] transition-transform">
+                      <IdCardRenderer
+                        card={card}
+                        settings={settings}
+                        side="back"
+                        cardRef={backRef}
+                      />
+                    </div>
                   </div>
-                  <div className="text-center mt-2.5 text-xs font-semibold text-slate-400">
+                  <div className="text-center mt-3 text-xs font-semibold text-slate-400">
                     Back Side (Terms & Address)
                   </div>
                 </div>
@@ -323,7 +327,7 @@ export default function IdCardPreviewModal({
           </div>
 
           {/* Card Management Sidebar (Right) */}
-          <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
+          <div className="w-full lg:col-span-5 flex flex-col space-y-4 shrink-0">
             
             {/* Quick Actions Panel */}
             <div className="bg-[#171717] p-5 rounded-2xl border border-[#353535] shadow-xl space-y-3">
@@ -451,7 +455,7 @@ export default function IdCardPreviewModal({
                   Lost Card Instructions
                 </span>
                 <p className="text-stone-300 text-[11px] leading-relaxed">
-                  {settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210'}
+                  {settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686'}
                 </p>
               </div>
             </div>

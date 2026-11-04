@@ -231,7 +231,7 @@ export default function MyIdCardView({
                   Lost Card Instructions
                 </span>
                 <p className="text-slate-600 text-[11px] leading-relaxed">
-                  {settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210'}
+                  {settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686'}
                 </p>
               </div>
             </div>

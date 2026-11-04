@@ -23,7 +23,7 @@ export default function SettingsView({
     company_name: settings?.company_name || 'WORKDEN',
     company_tagline: settings?.company_tagline || 'OFFICIAL IDENTITY CARD',
     company_website: settings?.company_website || 'https://workden.online',
-    official_email: settings?.official_email || 'contact@workden.online',
+    official_email: settings?.official_email || 'support@workden.online',
     office_address: settings?.office_address || 'WorkDen Tower, Plot 14, Sector 62, Noida, UP 201301',
     authorized_signatory: settings?.authorized_signatory || 'Director of Operations',
     signature_image: settings?.signature_image || '/signature.png',
@@ -31,7 +31,7 @@ export default function SettingsView({
     secondary_color: settings?.secondary_color || '#171717',
     accent_color: settings?.accent_color || '#F5C542',
     card_usage_rules: settings?.card_usage_rules || '1. This credential is official property of WorkDen.\n2. Must be presented upon request to security personnel.\n3. Non-transferable and must be surrendered upon cessation.\n4. Misuse or tampering is strictly prohibited.',
-    lost_card_instructions: settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210'
+    lost_card_instructions: settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686'
   });
 
   const [newDeptName, setNewDeptName] = useState('');
@@ -168,7 +168,7 @@ export default function SettingsView({
                 name="official_email"
                 value={formData.official_email}
                 onChange={handleChange}
-                placeholder="contact@workden.online"
+                placeholder="support@workden.online"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-white placeholder-[#666] focus:outline-none focus:border-[#F5C542] focus:ring-1 focus:ring-[#F5C542] text-xs transition-all"
               />
             </div>

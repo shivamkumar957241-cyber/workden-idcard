@@ -274,7 +274,10 @@ export default function PublicVerificationView({ token, onBack }) {
       </main>
 
       {/* Footer */}
-      <footer className="max-w-2xl mx-auto w-full pt-6 border-t border-slate-800 text-center text-xs text-slate-500 space-y-1">
+      <footer className="max-w-2xl mx-auto w-full pt-6 border-t border-slate-800 text-center text-xs text-slate-500 space-y-1.5">
+        <p className="text-slate-400 text-xs font-medium">
+          Support: <a href="mailto:support@workden.online" className="text-[#F5C542] hover:underline">support@workden.online</a> • Helpline: <a href="tel:+919262725686" className="text-[#F5C542] hover:underline">+91 9262725686</a>
+        </p>
         <p>© 2026 WORKDEN. All rights reserved.</p>
         <p className="text-[11px] text-slate-600">
           Official Domain: <span className="font-mono text-slate-400">https://workden.online</span>

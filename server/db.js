@@ -152,7 +152,7 @@ function initDatabase() {
       company_tagline TEXT DEFAULT 'OFFICIAL IDENTITY CARD',
       company_logo TEXT DEFAULT '/logo.png',
       company_website TEXT DEFAULT 'https://workden.online',
-      official_email TEXT DEFAULT 'contact@workden.online',
+      official_email TEXT DEFAULT 'support@workden.online',
       office_address TEXT DEFAULT 'WorkDen Tower, Plot 14, Sector 62, Noida, UP 201301',
       authorized_signatory TEXT DEFAULT 'Director - People & Operations',
       signature_image TEXT DEFAULT '/signature.png',
@@ -160,7 +160,7 @@ function initDatabase() {
       secondary_color TEXT DEFAULT '#1e3a8a',
       accent_color TEXT DEFAULT '#38bdf8',
       card_usage_rules TEXT DEFAULT '1. This card is official property of WorkDen Unified Spaces.\n2. Must be visibly displayed at all times within premises.\n3. Non-transferable and must be surrendered upon request or employment cessation.\n4. Tampering or misuse is strictly prohibited.',
-      lost_card_instructions TEXT DEFAULT 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210',
+      lost_card_instructions TEXT DEFAULT 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686',
       qr_position TEXT DEFAULT 'front_bottom_right',
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -288,8 +288,16 @@ function seedInitialData() {
   const settingsCount = db.prepare('SELECT COUNT(*) as count FROM id_card_settings').get().count;
   if (settingsCount === 0) {
     db.prepare(`
-      INSERT INTO id_card_settings (id, company_name, company_tagline, company_website, official_email, office_address, authorized_signatory)
-      VALUES (1, 'WORKDEN', 'OFFICIAL IDENTITY CARD', 'https://workden.online', 'contact@workden.online', 'WorkDen Tower, Plot 14, Sector 62, Noida, UP 201301', 'Director of Operations')
+      INSERT INTO id_card_settings (id, company_name, company_tagline, company_website, official_email, office_address, authorized_signatory, lost_card_instructions)
+      VALUES (1, 'WORKDEN', 'OFFICIAL IDENTITY CARD', 'https://workden.online', 'support@workden.online', 'WorkDen Tower, Plot 14, Sector 62, Noida, UP 201301', 'Director of Operations', 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686')
+    `).run();
+  } else {
+    // Keep official email & instructions in sync
+    db.prepare(`
+      UPDATE id_card_settings 
+      SET official_email = 'support@workden.online',
+          lost_card_instructions = 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686'
+      WHERE id = 1 AND (official_email = 'contact@workden.online' OR lost_card_instructions LIKE '%98765 43210%')
     `).run();
   }
 

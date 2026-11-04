@@ -511,7 +511,7 @@ export default function UserDashboard({ user, onLogout }) {
                         Lost Card Instructions
                       </p>
                       <p className="text-[#D4D4D4] text-xs mt-1 leading-relaxed">
-                        {settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210'}
+                        {settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686'}
                       </p>
                     </div>
                   </div>
