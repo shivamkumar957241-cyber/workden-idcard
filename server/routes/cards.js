@@ -247,14 +247,14 @@ router.delete('/:id', (req, res) => {
       // 2. Delete card history
       db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(cardId);
       // 3. Clear card_id from id_applications if linked
-      db.prepare('UPDATE id_applications SET card_id = NULL, status = "REJECTED", rejection_reason = "Card deleted by admin" WHERE card_id = ?').run(cardId);
+      db.prepare("UPDATE id_applications SET card_id = NULL, status = 'REJECTED', rejection_reason = 'Card deleted by admin' WHERE card_id = ?").run(cardId);
       // 4. Delete the card record
       db.prepare('DELETE FROM id_card_records WHERE id = ?').run(cardId);
       // 5. If profile_type is STAFF / USER, delete or update profile status
       if (card.profile_type === 'STAFF') {
-        db.prepare('UPDATE staff_profiles SET employment_status = "Terminated" WHERE id = ?').run(card.profile_id);
+        db.prepare("UPDATE staff_profiles SET employment_status = 'Terminated' WHERE id = ?").run(card.profile_id);
       } else if (card.profile_type === 'USER') {
-        db.prepare('UPDATE user_id_profiles SET user_status = "Inactive" WHERE id = ?').run(card.profile_id);
+        db.prepare("UPDATE user_id_profiles SET user_status = 'Inactive' WHERE id = ?").run(card.profile_id);
       }
       logAudit('CARD_DELETED', req.user?.email || 'Admin', 'CARD', cardId, `Permanently deleted ID Card ${card.entity_code} (${card.card_number})`, req.ip);
     })();

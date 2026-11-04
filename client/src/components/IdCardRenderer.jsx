@@ -1,6 +1,7 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
+import { SHIVAM_SIGNATURE_BASE64 } from '../assets/signatureBase64';
 import { formatDateIST } from '../utils/date';
 
 const VERIFY_BASE = typeof import.meta !== 'undefined' && import.meta.env?.VITE_VERIFY_BASE_URL
@@ -439,15 +440,15 @@ function IdCardBack({ card, settings, cardRef }) {
       </div>
 
       {/* Usage Instructions Area */}
-      <div style={{ padding: '5px 14px 2px 14px' }}>
-        <div style={{ color: accentColor, fontSize: 6.8, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 2 }}>
+      <div style={{ padding: '5px 14px 0 14px' }}>
+        <div style={{ color: accentColor, fontSize: 6.8, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 2.5 }}>
           TERMS OF USE & GUIDELINES
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {rules.slice(0, 3).map((rule, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
               <span style={{ color: accentColor, fontSize: 7, lineHeight: 1, marginTop: 1 }}>•</span>
-              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 6.5, lineHeight: 1.25 }}>
+              <span style={{ color: 'rgba(255,255,255,0.82)', fontSize: 6.5, lineHeight: 1.25 }}>
                 {rule}
               </span>
             </div>
@@ -455,21 +456,21 @@ function IdCardBack({ card, settings, cardRef }) {
         </div>
       </div>
 
-      {/* Lost Card Instructions Area */}
+      {/* Lost Card Instructions Area - Positioned neatly with comfortable spacing */}
       <div
         style={{
-          margin: '3px 14px 0 14px',
-          padding: '4px 8px',
+          margin: '9px 14px 0 14px',
+          padding: '4.5px 9px',
           borderRadius: 6,
           background: 'rgba(245,197,66,0.08)',
-          border: '1px solid rgba(245,197,66,0.25)',
+          border: '1px solid rgba(245,197,66,0.28)',
           boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
         }}
       >
-        <div style={{ color: accentColor, fontSize: 6.5, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 1 }}>
+        <div style={{ color: accentColor, fontSize: 6.5, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 1.5 }}>
           LOST CARD INSTRUCTIONS
         </div>
-        <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 6.5, lineHeight: 1.25 }}>
+        <div style={{ color: 'rgba(255,255,255,0.92)', fontSize: 6.5, lineHeight: 1.25 }}>
           {lostInstructions}
         </div>
       </div>
@@ -482,7 +483,7 @@ function IdCardBack({ card, settings, cardRef }) {
           left: 0,
           right: 0,
           zIndex: 2,
-          padding: '6px 14px 6px 14px',
+          padding: '5px 14px 6px 14px',
           borderTop: '1px solid rgba(245,197,66,0.2)',
           background: '#0B0B0B',
           display: 'flex',
@@ -516,14 +517,23 @@ function IdCardBack({ card, settings, cardRef }) {
           </div>
         </div>
 
-        {/* Authorized Signatory */}
+        {/* Authorized Signatory with Shivam Mishra Signature */}
         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <div style={{ color: '#ffffff', fontSize: 7.5, fontWeight: 700, letterSpacing: '0.01em', marginBottom: 2 }}>
-            {signatoryTitle}
-          </div>
+          <img
+            src={SHIVAM_SIGNATURE_BASE64}
+            alt="Shivam Mishra"
+            style={{
+              height: 20,
+              width: 'auto',
+              maxWidth: 85,
+              objectFit: 'contain',
+              marginBottom: 1,
+              filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))'
+            }}
+          />
           <div
             style={{
-              width: 80,
+              width: 85,
               borderBottom: '1px solid rgba(245,197,66,0.5)',
               marginBottom: 2
             }}
