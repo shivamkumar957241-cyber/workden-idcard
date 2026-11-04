@@ -507,6 +507,24 @@ export default function PublicVerifyPage({ token: propToken, onBack }) {
 
                 </div>
 
+                {/* Lost Card Instructions Box */}
+                {data.lost_card_instructions && (
+                  <div
+                    className="mt-4 p-4 rounded-2xl border text-left"
+                    style={{
+                      backgroundColor: '#181818',
+                      borderColor: '#353535'
+                    }}
+                  >
+                    <span className="text-[10px] font-bold block uppercase tracking-wider mb-1" style={{ color: '#F5C542' }}>
+                      Lost Card Instructions
+                    </span>
+                    <p className="text-xs leading-relaxed" style={{ color: '#D4D4D4' }}>
+                      {data.lost_card_instructions}
+                    </p>
+                  </div>
+                )}
+
               </div>
             ) : (
               /* Invalid State details */

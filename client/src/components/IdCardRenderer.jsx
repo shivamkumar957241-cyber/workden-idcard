@@ -366,6 +366,7 @@ function IdCardBack({ card, settings, cardRef }) {
   const officeAddress = s.office_address || 'WorkDen Tower, Plot 14, Sector 62, Noida, UP 201301';
   const officialEmail = s.official_email || 'contact@workden.online';
   const signatoryTitle = s.authorized_signatory || 'Director of Operations';
+  const lostInstructions = s.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210';
 
   const issueDateFormatted = card.issue_date
     ? formatDateIST(card.issue_date)
@@ -396,7 +397,7 @@ function IdCardBack({ card, settings, cardRef }) {
         style={{
           position: 'relative',
           zIndex: 2,
-          padding: '6px 14px',
+          padding: '5px 14px',
           borderBottom: '1px solid rgba(245,197,66,0.2)',
           background: '#0B0B0B',
           display: 'flex',
@@ -428,29 +429,48 @@ function IdCardBack({ card, settings, cardRef }) {
           />
         </div>
         <div>
-          <div style={{ color: accentColor, fontSize: 9.5, fontWeight: 800, letterSpacing: '0.12em', lineHeight: 1 }}>
+          <div style={{ color: accentColor, fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', lineHeight: 1 }}>
             {(s.company_name || 'WORKDEN').toUpperCase()}
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 7, marginTop: 1, lineHeight: 1.25 }}>
+          <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 6.8, marginTop: 1, lineHeight: 1.2 }}>
             {officeAddress}
           </div>
         </div>
       </div>
 
       {/* Usage Instructions Area */}
-      <div style={{ padding: '6px 14px 4px 14px' }}>
-        <div style={{ color: accentColor, fontSize: 7, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 3 }}>
+      <div style={{ padding: '5px 14px 2px 14px' }}>
+        <div style={{ color: accentColor, fontSize: 6.8, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 2 }}>
           TERMS OF USE & GUIDELINES
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {rules.slice(0, 4).map((rule, i) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {rules.slice(0, 3).map((rule, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-              <span style={{ color: accentColor, fontSize: 7.5, lineHeight: 1, marginTop: 1 }}>•</span>
-              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 7, lineHeight: 1.25 }}>
+              <span style={{ color: accentColor, fontSize: 7, lineHeight: 1, marginTop: 1 }}>•</span>
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 6.5, lineHeight: 1.25 }}>
                 {rule}
               </span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Lost Card Instructions Area */}
+      <div
+        style={{
+          margin: '3px 14px 0 14px',
+          padding: '4px 8px',
+          borderRadius: 6,
+          background: 'rgba(245,197,66,0.08)',
+          border: '1px solid rgba(245,197,66,0.25)',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
+        }}
+      >
+        <div style={{ color: accentColor, fontSize: 6.5, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 1 }}>
+          LOST CARD INSTRUCTIONS
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 6.5, lineHeight: 1.25 }}>
+          {lostInstructions}
         </div>
       </div>
 

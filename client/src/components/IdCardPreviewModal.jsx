@@ -350,11 +350,19 @@ export default function IdCardPreviewModal({
                 <span className="text-slate-400">Expiry Date</span>
                 <span className="font-bold text-emerald-400">{card.expiry_date ? formatDateIST(card.expiry_date) : 'Permanent'}</span>
               </div>
-              <div className="flex justify-between py-1">
+              <div className="flex justify-between py-1 border-b border-white/5">
                 <span className="text-slate-400">QR Token</span>
                 <span className="font-mono text-[10px] text-slate-500 truncate max-w-[170px]" title={card.qr_token}>
                   {card.qr_token || 'N/A'}
                 </span>
+              </div>
+              <div className="pt-2">
+                <span className="text-[#F5C542] text-[10px] font-bold block uppercase tracking-wider mb-1">
+                  Lost Card Instructions
+                </span>
+                <p className="text-stone-300 text-[11px] leading-relaxed">
+                  {settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210'}
+                </p>
               </div>
             </div>
 

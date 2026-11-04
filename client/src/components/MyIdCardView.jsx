@@ -226,6 +226,14 @@ export default function MyIdCardView({
                 <span className="text-slate-500">Lifetime Scans</span>
                 <span className="font-bold text-slate-900">{currentUser.scan_count || 0} times</span>
               </div>
+              <div className="pt-2 border-t border-slate-100">
+                <span className="text-[#B48200] text-[10px] font-bold block uppercase tracking-wider mb-0.5">
+                  Lost Card Instructions
+                </span>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  {settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210'}
+                </p>
+              </div>
             </div>
 
             <button

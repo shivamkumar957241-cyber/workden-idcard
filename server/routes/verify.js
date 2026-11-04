@@ -138,7 +138,8 @@ router.get('/:token', (req, res) => {
       card_version: tokenRecord.card_version,
       authorized_by: tokenRecord.authorized_by || 'WorkDen Operations',
       server_verified_at: new Date().toISOString(),
-      official_portal: settings.company_website || 'https://workden.online'
+      official_portal: settings.company_website || 'https://workden.online',
+      lost_card_instructions: settings.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210'
     };
 
     logAudit('PUBLIC_QR_SCAN', 'Public User / Google Lens', 'TOKEN', token, {

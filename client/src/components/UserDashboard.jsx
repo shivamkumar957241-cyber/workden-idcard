@@ -35,6 +35,7 @@ export default function UserDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showIdCard, setShowIdCard] = useState(false);
+  const [dashboardCardSide, setDashboardCardSide] = useState('front');
   const [verifyToken, setVerifyToken] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -360,14 +361,38 @@ export default function UserDashboard({ user, onLogout }) {
                   </div>
                 </div>
 
-                {/* ID Card preview */}
-                <div className="flex justify-center p-3 sm:p-5 bg-[#121212] rounded-2xl border border-[#353535] overflow-x-auto">
-                  <div className="relative shrink-0">
+                {/* ID Card preview with front/back toggle */}
+                <div className="flex flex-col items-center justify-center p-4 sm:p-6 bg-[#121212] rounded-2xl border border-[#353535]">
+                  <div className="flex items-center gap-2 mb-4 bg-[#1e1e1e] p-1 rounded-xl border border-[#353535]">
+                    <button
+                      type="button"
+                      onClick={() => setDashboardCardSide('front')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        dashboardCardSide === 'front'
+                          ? 'bg-[#F5C542] text-black shadow-md shadow-[#F5C542]/20'
+                          : 'text-[#888] hover:text-white'
+                      }`}
+                    >
+                      Front Side
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDashboardCardSide('back')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        dashboardCardSide === 'back'
+                          ? 'bg-[#F5C542] text-black shadow-md shadow-[#F5C542]/20'
+                          : 'text-[#888] hover:text-white'
+                      }`}
+                    >
+                      Back Side (Instructions)
+                    </button>
+                  </div>
+                  <div className="relative shrink-0 overflow-x-auto max-w-full">
                     <div className="absolute -inset-4 bg-[#F5C542]/5 rounded-3xl blur-xl" />
                     <IdCardRenderer
                       card={buildCardData(application)}
                       settings={settings}
-                      side="front"
+                      side={dashboardCardSide}
                     />
                   </div>
                 </div>
@@ -378,7 +403,7 @@ export default function UserDashboard({ user, onLogout }) {
                     onClick={() => setShowIdCard(true)}
                     className="flex items-center justify-center gap-2 py-3 px-4 bg-[#222222] border border-[#353535] hover:border-[#F5C542] text-white hover:text-[#F5C542] rounded-xl text-sm font-semibold transition-all cursor-pointer"
                   >
-                    <Eye className="w-4 h-4" /> Preview Card
+                    <Eye className="w-4 h-4" /> Preview & Print Card
                   </button>
                   {application.qr_token && (
                     <button
@@ -418,6 +443,21 @@ export default function UserDashboard({ user, onLogout }) {
                         <p className="text-white text-xs font-semibold truncate">{value || '—'}</p>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Lost Card Instructions Box */}
+                  <div className="mt-4 p-4 rounded-xl bg-[#222222] border border-[#353535] flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 flex items-center justify-center shrink-0 mt-0.5">
+                      <AlertCircle className="w-4 h-4 text-[#F5C542]" />
+                    </div>
+                    <div>
+                      <p className="text-[#F5C542] text-[11px] font-bold uppercase tracking-wider">
+                        Lost Card Instructions
+                      </p>
+                      <p className="text-[#D4D4D4] text-xs mt-1 leading-relaxed">
+                        {settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email contact@workden.online / Call +91 98765 43210'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
