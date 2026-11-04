@@ -253,60 +253,60 @@ export default function UserDashboard({ user, onLogout }) {
     <div className="min-h-screen bg-[#0B0B0B] text-white">
       {/* Header */}
       <header className="border-b border-[#353535] bg-[#121212] sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-black border border-[#F5C542]/40 flex items-center justify-center p-1.5 shadow-md">
+        <div className="max-w-5xl mx-auto px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black border border-[#F5C542]/40 flex items-center justify-center p-1.5 shadow-md shrink-0">
               <img src={WORKDEN_LOGO_BASE64} alt="WorkDen Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-white font-extrabold text-sm tracking-wider flex items-center gap-1.5">
-                WORKDEN <span className="text-[#F5C542] text-[10px] font-mono border border-[#F5C542]/40 px-1.5 py-0.2 rounded">PORTAL</span>
+              <h1 className="text-white font-extrabold text-xs sm:text-sm tracking-wider flex items-center gap-1.5">
+                WORKDEN <span className="text-[#F5C542] text-[9px] sm:text-[10px] font-mono border border-[#F5C542]/40 px-1 sm:px-1.5 py-0.2 rounded">PORTAL</span>
               </h1>
-              <p className="text-[#B5B5B5] text-xs">Official Member ID & Verification Portal</p>
+              <p className="text-[#B5B5B5] text-[11px] sm:text-xs truncate">Official Member ID & Verification Portal</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#171717] border border-[#353535] rounded-full">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className="text-[#B5B5B5] text-xs font-medium">{user.full_name}</span>
             </div>
             <button
               onClick={onLogout}
-              className="flex items-center gap-1.5 text-[#B5B5B5] hover:text-[#F5C542] text-xs px-3 py-1.5 rounded-lg border border-[#353535] hover:border-[#F5C542]/50 bg-[#171717] transition-all"
+              className="flex items-center gap-1.5 text-[#B5B5B5] hover:text-[#F5C542] text-xs px-2.5 sm:px-3 py-1.5 rounded-lg border border-[#353535] hover:border-[#F5C542]/50 bg-[#171717] transition-all cursor-pointer"
             >
-              <LogOut className="w-3.5 h-3.5" /> Sign Out
+              <LogOut className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-5xl mx-auto px-2 sm:px-6 py-3 sm:py-8 space-y-4 sm:space-y-6">
 
         {/* Welcome banner */}
-        <div className="bg-[#171717] border border-[#353535] rounded-2xl p-6 relative overflow-hidden">
+        <div className="bg-[#171717] border border-[#353535] rounded-xl sm:rounded-2xl p-4 sm:p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#F5C542]/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="text-[#F5C542] text-xs font-bold tracking-widest uppercase">Member ID Services</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                <span className="text-[#F5C542] text-[10px] sm:text-xs font-bold tracking-widest uppercase">Member ID Services</span>
                 <span className="text-[#353535]">·</span>
-                <span className="text-[#888] text-xs font-medium">Official Portal</span>
+                <span className="text-[#888] text-[10px] sm:text-xs font-medium">Official Portal</span>
                 {application && application.status === 'APPROVED' && (
                   <>
                     <span className="text-[#353535]">·</span>
-                    <span className="text-emerald-400 text-xs font-semibold flex items-center gap-1">
+                    <span className="text-emerald-400 text-[10px] sm:text-xs font-semibold flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Verified Account
                     </span>
                   </>
                 )}
               </div>
-              <h2 className="text-2xl font-black text-white mb-1">Welcome back, {user.full_name.split(' ')[0]} 👋</h2>
-              <p className="text-[#B5B5B5] text-sm">Apply for your official WorkDen Member ID Card, download your issued ID card, and verify ID card details anytime.</p>
+              <h2 className="text-lg sm:text-2xl font-black text-white mb-1">Welcome back, {user.full_name.split(' ')[0]} 👋</h2>
+              <p className="text-[#B5B5B5] text-xs sm:text-sm">Apply for your official WorkDen ID Card, download your issued card, and verify ID credentials.</p>
             </div>
             {application && application.status === 'APPROVED' && (
               <button
                 onClick={() => setShowIdCard(true)}
-                className="px-4 py-2.5 bg-[#F5C542] hover:bg-[#FFD84D] text-black font-extrabold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 transition-all self-start sm:self-center shadow-lg shadow-[#F5C542]/10"
+                className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-[#F5C542] hover:bg-[#FFD84D] text-black font-extrabold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 transition-all self-start sm:self-center shadow-lg shadow-[#F5C542]/10 cursor-pointer"
               >
                 <Eye className="w-4 h-4 text-black" /> View Full ID Card
               </button>
@@ -521,37 +521,37 @@ export default function UserDashboard({ user, onLogout }) {
           </div>
         ) : showForm ? (
           /* Application Form */
-          <div className="bg-[#171717] border border-[#353535] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-[#353535] bg-[#121212] flex items-center justify-between">
+          <div className="bg-[#171717] border border-[#353535] rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl">
+            <div className="p-3.5 sm:p-6 border-b border-[#353535] bg-[#121212] flex items-center justify-between gap-3">
               <div>
-                <span className="text-[11px] font-bold text-[#F5C542] uppercase tracking-wider">Identity Card Registration</span>
-                <h3 className="text-white font-extrabold text-lg mt-0.5">WorkDen Official ID Card Application</h3>
+                <span className="text-[10px] sm:text-[11px] font-bold text-[#F5C542] uppercase tracking-wider">Identity Card Registration</span>
+                <h3 className="text-white font-extrabold text-base sm:text-lg mt-0.5">WorkDen Official ID Card Application</h3>
                 <p className="text-[#B5B5B5] text-xs mt-1">Complete your registration below. Once submitted, your ID will be approved by the admin team.</p>
               </div>
               <button
                 onClick={() => setShowForm(false)}
-                className="text-[#888] hover:text-white p-2 rounded-xl hover:bg-[#222222] transition-colors"
+                className="text-[#888] hover:text-white p-2 rounded-xl hover:bg-[#222222] transition-colors shrink-0 cursor-pointer"
               >
                 ✕
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-2.5 sm:p-6 space-y-3.5 sm:space-y-6">
               {error && (
-                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-3.5 py-3">
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                  <p className="text-red-300 text-sm font-medium">{error}</p>
+                  <p className="text-red-300 text-xs sm:text-sm font-medium">{error}</p>
                 </div>
               )}
 
               {/* Photo upload */}
-              <div>
+              <div className="bg-[#121212] p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-[#353535]">
                 <label className="block text-[#B5B5B5] text-xs font-bold mb-3 uppercase tracking-wider">Profile Photograph</label>
-                <div className="flex items-center gap-5">
-                  <div className="w-24 h-24 rounded-2xl bg-[#222222] border-2 border-dashed border-[#444] flex items-center justify-center overflow-hidden flex-shrink-0">
+                <div className="flex items-center gap-4 sm:gap-5">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-[#222222] border-2 border-dashed border-[#444] flex items-center justify-center overflow-hidden flex-shrink-0">
                     {photoPreview ? (
                       <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
-                      <User className="w-10 h-10 text-[#666]" />
+                      <User className="w-8 h-8 sm:w-10 sm:h-10 text-[#666]" />
                     )}
                   </div>
                   <div>
@@ -561,12 +561,12 @@ export default function UserDashboard({ user, onLogout }) {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-[#222222] border border-[#353535] hover:border-[#F5C542] text-white rounded-xl text-xs font-bold transition-all"
+                      className="flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-[#222222] border border-[#353535] hover:border-[#F5C542] text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
                     >
                       {uploading ? <Loader2 className="w-4 h-4 animate-spin text-[#F5C542]" /> : <Upload className="w-4 h-4 text-[#F5C542]" />}
                       {uploading ? 'Uploading...' : 'Choose Profile Photo'}
                     </button>
-                    <p className="text-[#888] text-[11px] mt-1.5">JPEG, PNG or WebP · High quality portrait photo · Max 5MB</p>
+                    <p className="text-[#888] text-[10px] sm:text-[11px] mt-1.5">JPEG, PNG or WebP · High quality portrait photo · Max 5MB</p>
                     {form.photo_url && <p className="text-emerald-400 text-xs font-semibold mt-1">✓ Photo uploaded successfully</p>}
                   </div>
                 </div>
@@ -575,7 +575,7 @@ export default function UserDashboard({ user, onLogout }) {
               {/* Card type */}
               <div>
                 <label className="block text-[#B5B5B5] text-xs font-bold mb-2 uppercase tracking-wider">Select ID Card Category</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {[
                     { value: 'USER', label: 'Member ID Card', desc: 'For coworking members, clients & founders' },
                     { value: 'STAFF', label: 'Staff ID Card', desc: 'For official WorkDen team & employees' }
@@ -584,32 +584,32 @@ export default function UserDashboard({ user, onLogout }) {
                       key={opt.value}
                       type="button"
                       onClick={() => setForm(p => ({ ...p, application_type: opt.value }))}
-                      className={`p-4 rounded-xl border text-left transition-all ${
+                      className={`p-3 sm:p-4 rounded-xl border text-left transition-all cursor-pointer ${
                         form.application_type === opt.value
                           ? 'bg-[#222222] border-[#F5C542] text-white shadow-md'
                           : 'bg-[#121212] border-[#353535] text-[#888] hover:border-[#555]'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <p className={`font-bold text-sm ${form.application_type === opt.value ? 'text-[#F5C542]' : 'text-white'}`}>
+                        <p className={`font-bold text-xs sm:text-sm ${form.application_type === opt.value ? 'text-[#F5C542]' : 'text-white'}`}>
                           {opt.label}
                         </p>
                         {form.application_type === opt.value && (
                           <span className="w-2 h-2 rounded-full bg-[#F5C542]"></span>
                         )}
                       </div>
-                      <p className="text-xs text-[#B5B5B5] mt-1">{opt.desc}</p>
+                      <p className="text-[11px] sm:text-xs text-[#B5B5B5] mt-1 leading-snug">{opt.desc}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Personal Info */}
-              <div className="bg-[#121212] p-5 rounded-2xl border border-[#353535] space-y-4">
-                <h4 className="text-white font-bold text-sm flex items-center gap-2 border-b border-[#353535] pb-2">
+              <div className="bg-[#121212] p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-[#353535] space-y-3 sm:space-y-4">
+                <h4 className="text-white font-bold text-xs sm:text-sm flex items-center gap-2 border-b border-[#353535] pb-2">
                   <User className="w-4 h-4 text-[#F5C542]" /> Personal Details
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {[
                     { label: 'Full Name *', key: 'full_name', type: 'text', placeholder: 'Full Name as per official ID' },
                     { label: "Father's Name", key: 'father_name', type: 'text', placeholder: 'Optional' },
@@ -623,7 +623,7 @@ export default function UserDashboard({ user, onLogout }) {
                       {type === 'select' ? (
                         <select
                           value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-                          className="w-full bg-[#222222] border border-[#353535] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#F5C542] transition-all cursor-pointer"
+                          className="w-full bg-[#222222] border border-[#353535] rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-[#F5C542] transition-all cursor-pointer"
                         >
                           {options.map(o => <option key={o} value={o} className="bg-[#171717] text-white">{o}</option>)}
                         </select>
@@ -631,7 +631,7 @@ export default function UserDashboard({ user, onLogout }) {
                         <input
                           type={type} value={form[key]} placeholder={placeholder}
                           onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-                          className="w-full bg-[#222222] border border-[#353535] rounded-xl px-4 py-3 text-white placeholder-[#666] text-sm focus:outline-none focus:border-[#F5C542] transition-all"
+                          className="w-full bg-[#222222] border border-[#353535] rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-white placeholder-[#666] text-xs sm:text-sm focus:outline-none focus:border-[#F5C542] transition-all"
                         />
                       )}
                     </div>
@@ -644,18 +644,18 @@ export default function UserDashboard({ user, onLogout }) {
                     onChange={e => setForm(p => ({ ...p, residential_address: e.target.value }))}
                     placeholder="Full residential address (Street, City, PIN code)"
                     rows={2}
-                    className="w-full bg-[#222222] border border-[#353535] rounded-xl px-4 py-3 text-white placeholder-[#666] text-sm focus:outline-none focus:border-[#F5C542] transition-all resize-none"
+                    className="w-full bg-[#222222] border border-[#353535] rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-white placeholder-[#666] text-xs sm:text-sm focus:outline-none focus:border-[#F5C542] transition-all resize-none"
                   />
                 </div>
               </div>
 
               {/* Staff-specific fields */}
               {form.application_type === 'STAFF' && (
-                <div className="bg-[#121212] p-5 rounded-2xl border border-[#353535] space-y-4">
-                  <h4 className="text-white font-bold text-sm flex items-center gap-2 border-b border-[#353535] pb-2">
-                    <Building2 className="w-4 h-4 text-[#F5C542]" /> Employment Details
+                <div className="bg-[#121212] p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-[#353535] space-y-3 sm:space-y-4">
+                  <h4 className="text-white font-bold text-xs sm:text-sm flex items-center gap-2 border-b border-[#353535] pb-2">
+                    <Building2 className="w-4 h-4 text-[#F5C542]" /> Employment & Identification Details
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {/* Department Dropdown */}
                     <div>
                       <label className="block text-[#B5B5B5] text-xs font-semibold mb-1.5 uppercase tracking-wider">
@@ -897,15 +897,15 @@ export default function UserDashboard({ user, onLogout }) {
 
               {/* User-specific fields */}
               {form.application_type === 'USER' && (
-                <div className="space-y-4">
+                <div className="space-y-3.5 sm:space-y-4">
                   {/* Member Category */}
-                  <div className="bg-[#121212] p-5 rounded-2xl border border-[#353535]">
+                  <div className="bg-[#121212] p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-[#353535]">
                     <div className="flex items-center justify-between">
                       <div>
                         <label className="block text-[#B5B5B5] text-xs font-bold uppercase tracking-wider">Member Category</label>
-                        <p className="text-xs text-[#888] mt-0.5">Official Verified Membership</p>
+                        <p className="text-[11px] sm:text-xs text-[#888] mt-0.5">Official Verified Membership</p>
                       </div>
-                      <div className="flex items-center gap-2 px-3.5 py-1.5 bg-[#222222] border border-[#F5C542]/40 rounded-xl">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#222222] border border-[#F5C542]/40 rounded-xl">
                         <span className="w-2 h-2 rounded-full bg-[#F5C542]"></span>
                         <span className="text-white text-xs font-bold tracking-wide">WorkDen Member</span>
                       </div>
@@ -913,12 +913,12 @@ export default function UserDashboard({ user, onLogout }) {
                   </div>
 
                   {/* Active Pricing Plans */}
-                  <div className="bg-[#121212] p-5 rounded-2xl border border-[#353535]">
-                    <label className="block text-[#B5B5B5] text-xs font-bold mb-3 uppercase tracking-wider">
+                  <div className="bg-[#121212] p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-[#353535]">
+                    <label className="block text-[#B5B5B5] text-xs font-bold mb-2.5 sm:mb-3 uppercase tracking-wider">
                       Select Active Membership Plan
                     </label>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
                       {PRICING_PLANS.map(plan => {
                         const isSelected = form.current_plan === plan.heading || form.current_plan === plan.name || form.current_plan?.startsWith(plan.price);
                         return (
@@ -926,14 +926,14 @@ export default function UserDashboard({ user, onLogout }) {
                             key={plan.price}
                             type="button"
                             onClick={() => setForm(p => ({ ...p, current_plan: plan.heading }))}
-                            className={`p-4 rounded-xl border text-center transition-all cursor-pointer ${
+                            className={`p-3 sm:p-4 rounded-xl border text-center transition-all cursor-pointer ${
                               isSelected
                                 ? 'bg-[#1e1e1e] border-[#F5C542] text-white shadow-xl shadow-[#F5C542]/10 ring-1 ring-[#F5C542]'
                                 : 'bg-[#171717] border-[#353535] text-[#B5B5B5] hover:border-[#555] hover:bg-[#1c1c1c]'
                             }`}
                           >
-                            <div className="text-lg font-black text-[#F5C542]">{plan.price}</div>
-                            <div className="text-xs font-bold text-white mt-1">{plan.name}</div>
+                            <div className="text-base sm:text-lg font-black text-[#F5C542]">{plan.price}</div>
+                            <div className="text-[11px] sm:text-xs font-bold text-white mt-0.5 sm:mt-1">{plan.name}</div>
                           </button>
                         );
                       })}
@@ -942,19 +942,19 @@ export default function UserDashboard({ user, onLogout }) {
                 </div>
               )}
 
-              <div className="flex items-center gap-3 pt-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 pt-2 sm:pt-3 flex-wrap">
                 <button
                   type="submit"
                   disabled={submitting || uploading}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#F5C542] hover:bg-[#FFD84D] text-black font-extrabold rounded-xl transition-all text-sm disabled:opacity-60 shadow-lg shadow-[#F5C542]/20"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-[#F5C542] hover:bg-[#FFD84D] text-black font-extrabold rounded-xl transition-all text-xs sm:text-sm disabled:opacity-60 shadow-lg shadow-[#F5C542]/20 cursor-pointer"
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Send className="w-4 h-4 text-black" />}
-                  {submitting ? 'Submitting Application...' : 'Submit Application'}
+                  <span>{submitting ? 'Submitting Application...' : 'Submit Application'}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-6 py-3 bg-[#222222] border border-[#353535] text-[#B5B5B5] hover:text-white rounded-xl hover:bg-[#2a2a2a] transition-all text-sm"
+                  className="px-5 sm:px-6 py-2.5 sm:py-3 bg-[#222222] border border-[#353535] text-[#B5B5B5] hover:text-white rounded-xl hover:bg-[#2a2a2a] transition-all text-xs sm:text-sm cursor-pointer"
                 >
                   Cancel
                 </button>
