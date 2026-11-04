@@ -290,6 +290,12 @@ router.delete('/:id', (req, res) => {
         db.prepare('DELETE FROM user_id_profiles WHERE id = ?').run(userProf.id);
       }
 
+      // Also permanently delete login account from auth_users
+      const targetEmail = staff?.email || userProf?.email;
+      if (targetEmail) {
+        db.prepare("DELETE FROM auth_users WHERE email = ? AND role != 'ADMIN'").run(targetEmail);
+      }
+
       logAudit('RECORD_PERMANENT_DELETE', req.user?.email || 'Admin', 'PURGE', targetId,
         `Permanently purged ${staff?.full_name || userProf?.full_name || card?.entity_code} from all database tables`, req.ip);
     })();

@@ -36,9 +36,93 @@ export default function IdCardPreviewModal({
 
   const isStaff = (card.profile_type || 'USER') === 'STAFF';
 
-  // Print Card function
-  const handlePrint = () => {
-    window.print();
+  // Print Card function - Uses high-res PNG render with exact color retention for CR80 printers
+  const handlePrint = async () => {
+    try {
+      const frontEl = exportFrontRef.current || frontRef.current;
+      const backEl = exportBackRef.current || backRef.current;
+      if (!frontEl) return;
+
+      const renderOptions = {
+        quality: 1.0,
+        pixelRatio: 3,
+        cacheBust: true,
+        width: 340,
+        height: 214,
+        backgroundColor: '#0B0B0B',
+        style: {
+          margin: '0',
+          transform: 'none',
+          boxShadow: 'none',
+          borderRadius: '0'
+        }
+      };
+
+      const imgFront = await toPng(frontEl, renderOptions);
+      const imgBack = backEl ? await toPng(backEl, renderOptions) : null;
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        window.print();
+        return;
+      }
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>WorkDen ID Card - ${card.entity_code || 'Card'}</title>
+            <style>
+              @page {
+                size: 85.6mm 53.98mm landscape;
+                margin: 0;
+              }
+              html, body {
+                margin: 0;
+                padding: 0;
+                background-color: #000000;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+              }
+              .page {
+                width: 85.6mm;
+                height: 53.98mm;
+                page-break-after: always;
+                page-break-inside: avoid;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              img {
+                width: 85.6mm;
+                height: 53.98mm;
+                display: block;
+                object-fit: contain;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="page"><img src="${imgFront}" /></div>
+            ${imgBack ? `<div class="page"><img src="${imgBack}" /></div>` : ''}
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                  window.close();
+                }, 400);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (err) {
+      console.error('Print error:', err);
+      window.print();
+    }
   };
 
   // Download PDF using html-to-image & jsPDF (Tailwind v4 / oklch compatible)
@@ -96,21 +180,21 @@ export default function IdCardPreviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
-      <div className="bg-[#121212] rounded-3xl shadow-2xl border border-[#353535] max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-[#121212] rounded-2xl sm:rounded-3xl shadow-2xl border border-[#353535] max-w-4xl w-full max-h-[95vh] sm:max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-[#353535] flex items-center justify-between bg-[#0E0E0E] text-white">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#F5C542]/10 border border-[#F5C542]/30 flex items-center justify-center shadow-lg shadow-[#F5C542]/10">
-              <ShieldCheck className="w-5 h-5 text-[#F5C542]" />
+        <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-[#353535] flex items-center justify-between gap-2 bg-[#0E0E0E] text-white">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#F5C542]/10 border border-[#F5C542]/30 flex items-center justify-center shadow-lg shadow-[#F5C542]/10 shrink-0">
+              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#F5C542]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-lg text-white">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h3 className="font-bold text-sm sm:text-lg text-white truncate">
                   Official ID Card Preview
                 </h3>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
                   card.status === 'ACTIVE'
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                     : card.status === 'PENDING'
@@ -120,26 +204,27 @@ export default function IdCardPreviewModal({
                   {card.status || 'ACTIVE'}
                 </span>
               </div>
-              <p className="text-xs text-[#B5B5B5] font-mono mt-0.5">
+              <p className="text-[11px] sm:text-xs text-[#B5B5B5] font-mono mt-0.5 truncate">
                 {card.entity_code || card.staff_id || card.user_id_code} • Official Credential
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {onSimulateScan && card.qr_token && (
               <button
                 onClick={() => onSimulateScan(card.qr_token)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F5C542]/15 hover:bg-[#F5C542]/25 text-[#F5C542] border border-[#F5C542]/40 text-xs font-semibold shadow transition cursor-pointer"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-[#F5C542]/15 hover:bg-[#F5C542]/25 text-[#F5C542] border border-[#F5C542]/40 text-[11px] sm:text-xs font-semibold shadow transition cursor-pointer"
                 title="Simulate scanning this QR code with Google Lens / Camera"
               >
                 <QrCode className="w-3.5 h-3.5" />
-                <span>Simulate QR Scan</span>
+                <span className="hidden sm:inline">Simulate QR Scan</span>
+                <span className="sm:hidden">Scan</span>
               </button>
             )}
             <button
               onClick={onClose}
-              className="p-2 text-[#B5B5B5] hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
+              className="p-1.5 sm:p-2 text-[#B5B5B5] hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -147,15 +232,15 @@ export default function IdCardPreviewModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#0B0B0B]">
+        <div className="p-3 sm:p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 bg-[#0B0B0B]">
           
           {/* Card Presentation Area (Left / Center) */}
-          <div className="lg:col-span-7 flex flex-col items-center justify-center p-5 bg-[#171717] rounded-2xl border border-[#353535] shadow-inner">
+          <div className="lg:col-span-7 flex flex-col items-center justify-center p-3 sm:p-5 bg-[#171717] rounded-2xl border border-[#353535] shadow-inner overflow-hidden">
             {/* View Controls */}
-            <div className="flex items-center gap-2 mb-6 bg-[#111111] p-1.5 rounded-xl border border-[#353535]">
+            <div className="flex items-center gap-1 sm:gap-2 mb-4 sm:mb-6 bg-[#111111] p-1 sm:p-1.5 rounded-xl border border-[#353535] max-w-full overflow-x-auto">
               <button
                 onClick={() => setActiveSide('front')}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer whitespace-nowrap ${
                   activeSide === 'front'
                     ? 'bg-[#F5C542] text-black font-bold shadow-md shadow-[#F5C542]/20'
                     : 'text-[#B5B5B5] hover:text-white'
@@ -165,7 +250,7 @@ export default function IdCardPreviewModal({
               </button>
               <button
                 onClick={() => setActiveSide('back')}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer whitespace-nowrap ${
                   activeSide === 'back'
                     ? 'bg-[#F5C542] text-black font-bold shadow-md shadow-[#F5C542]/20'
                     : 'text-[#B5B5B5] hover:text-white'
@@ -175,26 +260,29 @@ export default function IdCardPreviewModal({
               </button>
               <button
                 onClick={() => setActiveSide('both')}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer whitespace-nowrap ${
                   activeSide === 'both'
                     ? 'bg-[#F5C542] text-black font-bold shadow-md shadow-[#F5C542]/20'
                     : 'text-[#B5B5B5] hover:text-white'
                 }`}
               >
-                Side-by-Side (Print Layout)
+                <span className="hidden sm:inline">Side-by-Side (Print Layout)</span>
+                <span className="sm:hidden">Both Sides</span>
               </button>
             </div>
 
-            {/* The Cards Rendering Container */}
-            <div className="print-card-area w-full max-w-full overflow-x-auto py-2 flex flex-wrap items-center justify-center gap-6">
+            {/* The Cards Rendering Container - Responsive Scaling */}
+            <div className="print-card-area w-full max-w-full flex flex-col items-center justify-center gap-4 sm:gap-6 py-1 overflow-hidden">
               {(activeSide === 'front' || activeSide === 'both') && (
-                <div className="transition-all duration-300">
-                  <IdCardRenderer
-                    card={card}
-                    settings={settings}
-                    side="front"
-                    cardRef={frontRef}
-                  />
+                <div className="flex flex-col items-center justify-center transition-all duration-300 w-full">
+                  <div className="scale-[0.82] min-[390px]:scale-[0.92] min-[440px]:scale-100 origin-center -my-3 min-[390px]:-my-1 min-[440px]:my-0 transition-transform shadow-2xl rounded-2xl">
+                    <IdCardRenderer
+                      card={card}
+                      settings={settings}
+                      side="front"
+                      cardRef={frontRef}
+                    />
+                  </div>
                   <div className="text-center mt-2.5 text-xs font-semibold text-slate-400">
                     Front Side (Standard CR80)
                   </div>
@@ -202,13 +290,15 @@ export default function IdCardPreviewModal({
               )}
 
               {(activeSide === 'back' || activeSide === 'both') && (
-                <div className="transition-all duration-300">
-                  <IdCardRenderer
-                    card={card}
-                    settings={settings}
-                    side="back"
-                    cardRef={backRef}
-                  />
+                <div className="flex flex-col items-center justify-center transition-all duration-300 w-full">
+                  <div className="scale-[0.82] min-[390px]:scale-[0.92] min-[440px]:scale-100 origin-center -my-3 min-[390px]:-my-1 min-[440px]:my-0 transition-transform shadow-2xl rounded-2xl">
+                    <IdCardRenderer
+                      card={card}
+                      settings={settings}
+                      side="back"
+                      cardRef={backRef}
+                    />
+                  </div>
                   <div className="text-center mt-2.5 text-xs font-semibold text-slate-400">
                     Back Side (Terms & Address)
                   </div>

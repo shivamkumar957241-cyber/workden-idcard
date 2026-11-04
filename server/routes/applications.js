@@ -312,6 +312,9 @@ router.delete('/:id', requireAuth, requireAdmin, (req, res) => {
         }
       }
       db.prepare('DELETE FROM id_applications WHERE id = ?').run(appId);
+      if (app.email) {
+        db.prepare("DELETE FROM auth_users WHERE email = ? AND role != 'ADMIN'").run(app.email);
+      }
       logAudit('APPLICATION_DELETE', req.user.email, 'APPLICATION', appId, `Permanently purged application for ${app.full_name}`, req.ip);
     })();
 

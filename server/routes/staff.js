@@ -620,6 +620,7 @@ router.delete('/:id', (req, res) => {
       db.prepare("DELETE FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").run(staffId);
       db.prepare("DELETE FROM id_applications WHERE application_type = 'STAFF' AND (email = ? OR mobile = ? OR profile_id = ?)").run(staff.email, staff.mobile, staffId);
       db.prepare('DELETE FROM staff_profiles WHERE id = ?').run(staffId);
+      db.prepare("DELETE FROM auth_users WHERE email = ? AND role != 'ADMIN'").run(staff.email);
       logAudit('STAFF_DELETED', req.user?.email || 'Admin', 'STAFF', staffId, `Permanently purged staff ${staff.full_name} (${staff.staff_id}) from database`, req.ip);
     })();
 

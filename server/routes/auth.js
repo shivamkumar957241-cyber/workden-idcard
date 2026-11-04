@@ -176,4 +176,96 @@ router.put('/change-password', requireAuth, (req, res) => {
   }
 });
 
+// GET /api/auth/accounts - Admin list all registered accounts with card/application status
+router.get('/accounts', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        u.id as user_id,
+        u.email,
+        u.full_name,
+        u.role,
+        u.created_at,
+        app.id as application_id,
+        app.status as application_status,
+        app.application_type,
+        card.id as card_id,
+        card.entity_code,
+        card.status as card_status
+      FROM auth_users u
+      LEFT JOIN id_applications app ON app.email = u.email OR app.applicant_user_id = u.id
+      LEFT JOIN id_card_records card ON card.id = app.card_id
+      ORDER BY u.id DESC
+    `;
+    const accounts = db.prepare(query).all();
+    res.json({ success: true, data: accounts });
+  } catch (err) {
+    console.error('Error fetching accounts:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /api/auth/accounts/:id - Admin permanently delete a registered account & all associated data
+router.delete('/accounts/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const targetUserId = parseInt(req.params.id, 10);
+    if (req.user.id === targetUserId) {
+      return res.status(400).json({ success: false, error: 'Cannot delete your own admin account.' });
+    }
+
+    const targetUser = db.prepare('SELECT * FROM auth_users WHERE id = ?').get(targetUserId);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, error: 'User account not found.' });
+    }
+
+    db.transaction(() => {
+      // 1. Find all applications by email or applicant_user_id
+      const apps = db.prepare('SELECT id, card_id FROM id_applications WHERE email = ? OR applicant_user_id = ?').all(targetUser.email, targetUserId);
+      for (const a of apps) {
+        if (a.card_id) {
+          db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(a.card_id);
+          db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(a.card_id);
+          db.prepare('DELETE FROM id_card_records WHERE id = ?').run(a.card_id);
+        }
+      }
+      db.prepare('DELETE FROM id_applications WHERE email = ? OR applicant_user_id = ?').run(targetUser.email, targetUserId);
+
+      // 2. Delete from staff_profiles if email matches
+      const staff = db.prepare('SELECT id FROM staff_profiles WHERE email = ?').all(targetUser.email);
+      for (const s of staff) {
+        const cList = db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").all(s.id);
+        for (const c of cList) {
+          db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(c.id);
+          db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(c.id);
+          db.prepare('DELETE FROM id_card_records WHERE id = ?').run(c.id);
+        }
+        db.prepare('DELETE FROM staff_profiles WHERE id = ?').run(s.id);
+      }
+
+      // 3. Delete from user_id_profiles if email matches
+      const userProfs = db.prepare('SELECT id FROM user_id_profiles WHERE email = ?').all(targetUser.email);
+      for (const u of userProfs) {
+        const cList = db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'USER' AND profile_id = ?").all(u.id);
+        for (const c of cList) {
+          db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(c.id);
+          db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(c.id);
+          db.prepare('DELETE FROM id_card_records WHERE id = ?').run(c.id);
+        }
+        db.prepare('DELETE FROM user_id_profiles WHERE id = ?').run(u.id);
+      }
+
+      // 4. Finally delete from auth_users
+      db.prepare('DELETE FROM auth_users WHERE id = ?').run(targetUserId);
+
+      logAudit('ACCOUNT_PURGED', req.user.email, 'AUTH', targetUserId,
+        `Permanently purged account and all linked data for ${targetUser.full_name} (${targetUser.email})`, req.ip);
+    })();
+
+    res.json({ success: true, message: `Account for ${targetUser.full_name} permanently deleted.` });
+  } catch (err) {
+    console.error('Error deleting account:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

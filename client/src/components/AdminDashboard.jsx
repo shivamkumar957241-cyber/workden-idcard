@@ -16,6 +16,7 @@ import SettingsView from './SettingsView';
 import QRManagementView from './QRManagementView';
 import AuditLogsView from './AuditLogsView';
 import ApplicationsView from './ApplicationsView';
+import UserAccountsView from './UserAccountsView';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
 
 const NAV_SECTIONS = [
@@ -24,6 +25,7 @@ const NAV_SECTIONS = [
   { id: 'user-cards', label: 'User ID Cards', icon: CreditCard, group: 'ID Management' },
   { id: 'all-issued', label: 'All Issued Cards', icon: Layers, group: 'ID Management' },
   { id: 'pending-approvals', label: 'Pending ID Approvals', icon: Clock, group: 'Approvals', badge: 'pending' },
+  { id: 'user-accounts', label: 'Registered Accounts', icon: Shield, group: 'User Accounts' },
   { id: 'qr-management', label: 'QR Verification', icon: QrCode, group: 'Security' },
   { id: 'expired-cards', label: 'Expired Cards', icon: AlertOctagon, group: 'Security' },
   { id: 'suspended-revoked', label: 'Revoked / Suspended', icon: Ban, group: 'Security' },
@@ -248,6 +250,8 @@ export default function AdminDashboard({ user, onLogout }) {
       case 'applications':
       case 'pending-approvals':
         return <ApplicationsView initialStatus="PENDING" onApprovalSuccess={() => { fetchAllCards(); fetchStaff(); fetchUsers(); fetchCounts(); showToast('Application processed successfully!'); }} />;
+      case 'user-accounts':
+        return <UserAccountsView onPreviewCard={c => setPreviewCard(c)} />;
       case 'qr-management':
         return <QRManagementView />;
       case 'expired-cards':
