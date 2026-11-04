@@ -55,6 +55,11 @@ function initDatabase() {
       mobile TEXT NOT NULL,
       email TEXT NOT NULL,
       residential_address TEXT,
+      city TEXT,
+      qualification TEXT,
+      aadhar_number TEXT,
+      aadhar_front TEXT,
+      aadhar_back TEXT,
       designation TEXT NOT NULL,
       department TEXT NOT NULL,
       joining_date TEXT NOT NULL,
@@ -172,6 +177,11 @@ function initDatabase() {
       designation TEXT,
       department TEXT,
       residential_address TEXT,
+      city TEXT,
+      qualification TEXT,
+      aadhar_number TEXT,
+      aadhar_front TEXT,
+      aadhar_back TEXT,
       father_name TEXT,
       dob TEXT,
       gender TEXT,
@@ -192,6 +202,25 @@ function initDatabase() {
       FOREIGN KEY(applicant_user_id) REFERENCES auth_users(id)
     );
   `);
+
+  // Safe automatic column migrations for existing databases
+  try {
+    const staffCols = db.prepare("PRAGMA table_info(staff_profiles)").all().map(c => c.name);
+    ['city', 'qualification', 'aadhar_number', 'aadhar_front', 'aadhar_back'].forEach(col => {
+      if (!staffCols.includes(col)) {
+        db.exec(`ALTER TABLE staff_profiles ADD COLUMN ${col} TEXT`);
+      }
+    });
+
+    const appCols = db.prepare("PRAGMA table_info(id_applications)").all().map(c => c.name);
+    ['city', 'qualification', 'aadhar_number', 'aadhar_front', 'aadhar_back'].forEach(col => {
+      if (!appCols.includes(col)) {
+        db.exec(`ALTER TABLE id_applications ADD COLUMN ${col} TEXT`);
+      }
+    });
+  } catch (migErr) {
+    console.error('Migration error:', migErr);
+  }
 
   seedInitialData();
 }

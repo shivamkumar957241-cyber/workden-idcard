@@ -12,7 +12,9 @@ import {
   Loader2,
   CheckCircle2,
   MapPin,
-  Mail
+  Mail,
+  FileText,
+  File
 } from 'lucide-react';
 import { authFetch } from '../api';
 
@@ -34,11 +36,18 @@ export default function StaffRegistrationModal({
     joining_date: new Date().toISOString().split('T')[0],
     work_location: 'Headquarters - Noida',
     residential_address: '',
+    city: '',
+    qualification: '',
+    aadhar_number: '',
+    aadhar_front: '',
+    aadhar_back: '',
     photo_url: '',
     auto_approve: true
   });
 
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingAadharFront, setIsUploadingAadharFront] = useState(false);
+  const [isUploadingAadharBack, setIsUploadingAadharBack] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [showAddDept, setShowAddDept] = useState(false);
@@ -46,6 +55,8 @@ export default function StaffRegistrationModal({
   const [showAddDesig, setShowAddDesig] = useState(false);
   const [newDesigName, setNewDesigName] = useState('');
   const fileInputRef = useRef(null);
+  const aadharFrontRef = useRef(null);
+  const aadharBackRef = useRef(null);
 
   if (!isOpen) return null;
 
@@ -85,6 +96,47 @@ export default function StaffRegistrationModal({
       setErrorMsg('Error uploading photo: ' + err.message);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleAadharUpload = async (e, side) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg('Aadhar document must be under 10MB.');
+      return;
+    }
+
+    const isFront = side === 'front';
+    try {
+      if (isFront) setIsUploadingAadharFront(true);
+      else setIsUploadingAadharBack(true);
+      setErrorMsg('');
+
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+
+      const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: uploadData
+      });
+
+      const json = await res.json();
+      if (json.success && json.fileUrl) {
+        setFormData(prev => ({
+          ...prev,
+          [isFront ? 'aadhar_front' : 'aadhar_back']: json.fileUrl
+        }));
+      } else {
+        setErrorMsg(json.error || 'Failed to upload Aadhar document');
+      }
+    } catch (err) {
+      setErrorMsg('Error uploading Aadhar: ' + err.message);
+    } finally {
+      if (isFront) setIsUploadingAadharFront(false);
+      else setIsUploadingAadharBack(false);
     }
   };
 
@@ -348,6 +400,122 @@ export default function StaffRegistrationModal({
                   placeholder="e.g. Noida Sector 62, Bangalore"
                   className="w-full bg-[#222222] border border-[#353535] rounded-xl px-3.5 py-2.5 text-white placeholder-[#666] text-xs focus:outline-none focus:border-[#F5C542]"
                 />
+              </div>
+
+              {/* City */}
+              <div>
+                <label className="block text-[#B5B5B5] text-xs font-semibold mb-1">City <span className="text-[#F5C542]">*</span></label>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Noida, Delhi, Lucknow"
+                  required
+                  className="w-full bg-[#222222] border border-[#353535] rounded-xl px-3.5 py-2.5 text-white placeholder-[#666] text-xs focus:outline-none focus:border-[#F5C542]"
+                />
+              </div>
+
+              {/* Qualification */}
+              <div>
+                <label className="block text-[#B5B5B5] text-xs font-semibold mb-1">Qualification <span className="text-[#F5C542]">*</span></label>
+                <input
+                  type="text"
+                  name="qualification"
+                  value={formData.qualification}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Graduate / B.Tech / MBA / Diploma"
+                  required
+                  className="w-full bg-[#222222] border border-[#353535] rounded-xl px-3.5 py-2.5 text-white placeholder-[#666] text-xs focus:outline-none focus:border-[#F5C542]"
+                />
+              </div>
+
+              {/* Enter Aadhar Number */}
+              <div className="sm:col-span-2">
+                <label className="block text-[#B5B5B5] text-xs font-semibold mb-1">Enter Aadhar Number <span className="text-[#F5C542]">*</span></label>
+                <input
+                  type="text"
+                  maxLength={14}
+                  value={formData.aadhar_number}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/\D/g, '').slice(0, 12);
+                    const formatted = raw.replace(/(\d{4})(?=\d)/g, '$1 ');
+                    setFormData(p => ({ ...p, aadhar_number: formatted }));
+                  }}
+                  placeholder="12-digit Aadhar (e.g. 1234 5678 9012)"
+                  required
+                  className="w-full bg-[#222222] border border-[#353535] rounded-xl px-3.5 py-2.5 text-white placeholder-[#666] text-xs font-mono focus:outline-none focus:border-[#F5C542]"
+                />
+              </div>
+
+              {/* Upload Aadhar Card (Front & Back) */}
+              <div className="sm:col-span-2 pt-3 border-t border-[#2a2a2a]">
+                <label className="block text-[#B5B5B5] text-xs font-bold mb-1 uppercase tracking-wider text-[#F5C542]">
+                  Upload Aadhar Card (Front & Back Side)
+                </label>
+                <p className="text-[#888] text-[11px] mb-3">Upload clear photo or PDF document of both sides of Aadhar card (JPG, PNG or PDF)</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Front Side */}
+                  <div className="bg-[#222222] border border-[#353535] rounded-xl p-3 flex flex-col items-center justify-center text-center">
+                    <input
+                      ref={aadharFrontRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      onChange={e => handleAadharUpload(e, 'front')}
+                    />
+                    <FileText className="w-5 h-5 text-[#F5C542] mb-1.5" />
+                    <p className="text-white text-xs font-bold">Aadhar Card Front</p>
+                    <p className="text-[#888] text-[10px] mb-2">JPG, PNG or PDF</p>
+                    {formData.aadhar_front ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-400 text-xs font-semibold">✓ Uploaded</span>
+                        <a href={formData.aadhar_front} target="_blank" rel="noreferrer" className="text-xs text-[#888] hover:text-white underline">View</a>
+                        <button type="button" onClick={() => aadharFrontRef.current?.click()} className="text-xs text-[#F5C542] hover:underline">Change</button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => aadharFrontRef.current?.click()}
+                        disabled={isUploadingAadharFront}
+                        className="py-1.5 px-3 bg-[#171717] hover:bg-[#2a2a2a] border border-[#353535] text-white rounded-lg text-xs font-semibold cursor-pointer"
+                      >
+                        {isUploadingAadharFront ? 'Uploading...' : 'Upload Front'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Back Side */}
+                  <div className="bg-[#222222] border border-[#353535] rounded-xl p-3 flex flex-col items-center justify-center text-center">
+                    <input
+                      ref={aadharBackRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      onChange={e => handleAadharUpload(e, 'back')}
+                    />
+                    <FileText className="w-5 h-5 text-[#F5C542] mb-1.5" />
+                    <p className="text-white text-xs font-bold">Aadhar Card Back</p>
+                    <p className="text-[#888] text-[10px] mb-2">JPG, PNG or PDF</p>
+                    {formData.aadhar_back ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-400 text-xs font-semibold">✓ Uploaded</span>
+                        <a href={formData.aadhar_back} target="_blank" rel="noreferrer" className="text-xs text-[#888] hover:text-white underline">View</a>
+                        <button type="button" onClick={() => aadharBackRef.current?.click()} className="text-xs text-[#F5C542] hover:underline">Change</button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => aadharBackRef.current?.click()}
+                        disabled={isUploadingAadharBack}
+                        className="py-1.5 px-3 bg-[#171717] hover:bg-[#2a2a2a] border border-[#353535] text-white rounded-lg text-xs font-semibold cursor-pointer"
+                      >
+                        {isUploadingAadharBack ? 'Uploading...' : 'Upload Back'}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Residential Address (Optional) */}

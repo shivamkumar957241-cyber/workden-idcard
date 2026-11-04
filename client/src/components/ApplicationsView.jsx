@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   FileText, Clock, CheckCircle2, XCircle, Eye, Check, X,
-  AlertCircle, Loader2, Calendar, User, Phone, Mail, Building2, RefreshCw, Trash2
+  AlertCircle, Loader2, Calendar, User, Phone, Mail, Building2, RefreshCw, Trash2,
+  ExternalLink, File
 } from 'lucide-react';
 import { authFetch } from '../api';
 import { formatDateIST } from '../utils/date';
@@ -245,34 +246,111 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
 
                 {/* Expanded details */}
                 {selectedApp?.id === app.id && (
-                  <div className="mt-4 pt-4 border-t border-[#353535] grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {[
-                      { label: 'Department', value: app.department },
-                      { label: 'Designation', value: app.designation },
-                      { label: 'Work Location', value: app.work_location },
-                      { label: 'Employment Type', value: app.employment_type },
-                      ...(app.application_type !== 'STAFF' ? [
-                        { label: 'User Category', value: app.user_category },
-                        { label: 'Current Plan', value: app.current_plan },
-                      ] : []),
-                      { label: 'Joining Date', value: formatDateIST(app.joining_date) },
-                      { label: 'Date of Birth', value: formatDateIST(app.dob) },
-                      { label: 'Gender', value: app.gender },
-                      { label: "Father's Name", value: app.father_name },
-                    ].filter(f => f.value).map(({ label, value }) => (
-                      <div key={label} className="bg-[#222222] border border-[#353535] rounded-xl px-3 py-2">
-                        <p className="text-[#888] text-[10px] uppercase font-bold tracking-wider mb-0.5">{label}</p>
-                        <p className="text-white text-xs font-medium">{value}</p>
+                  <div className="mt-4 pt-4 border-t border-[#353535] space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {[
+                        { label: 'Department', value: app.department },
+                        { label: 'Designation', value: app.designation },
+                        { label: 'City', value: app.city },
+                        { label: 'Qualification', value: app.qualification },
+                        { label: 'Aadhar Number', value: app.aadhar_number },
+                        { label: 'Work Location', value: app.work_location },
+                        { label: 'Employment Type', value: app.employment_type },
+                        ...(app.application_type !== 'STAFF' ? [
+                          { label: 'User Category', value: app.user_category },
+                          { label: 'Current Plan', value: app.current_plan },
+                        ] : []),
+                        { label: 'Joining Date', value: formatDateIST(app.joining_date) },
+                        { label: 'Date of Birth', value: formatDateIST(app.dob) },
+                        { label: 'Gender', value: app.gender },
+                        { label: "Father's Name", value: app.father_name },
+                        { label: 'Residential Address', value: app.residential_address },
+                      ].filter(f => f.value).map(({ label, value }) => (
+                        <div key={label} className="bg-[#222222] border border-[#353535] rounded-xl px-3 py-2">
+                          <p className="text-[#888] text-[10px] uppercase font-bold tracking-wider mb-0.5">{label}</p>
+                          <p className="text-white text-xs font-medium">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Uploaded Aadhar Documents (Front & Back) */}
+                    {(app.aadhar_front || app.aadhar_back) && (
+                      <div className="bg-[#1c1c1c] border border-[#353535] rounded-xl p-4">
+                        <p className="text-[#F5C542] text-[11px] font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> Uploaded Aadhar Card Documents
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Aadhar Front */}
+                          {app.aadhar_front ? (
+                            <div className="bg-[#222222] border border-[#353535] rounded-xl p-3 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-9 h-9 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 flex items-center justify-center shrink-0">
+                                  <FileText className="w-4 h-4 text-[#F5C542]" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-white text-xs font-bold truncate">Aadhar Front Side</p>
+                                  <p className="text-[#888] text-[10px]">
+                                    {app.aadhar_front.endsWith('.pdf') ? 'PDF Document' : 'Image File'}
+                                  </p>
+                                </div>
+                              </div>
+                              <a
+                                href={app.aadhar_front}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F5C542]/15 hover:bg-[#F5C542]/25 text-[#F5C542] border border-[#F5C542]/30 rounded-lg text-xs font-semibold transition shrink-0"
+                              >
+                                <span>Open</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="bg-[#222222]/50 border border-[#353535] rounded-xl p-3 text-[#777] text-xs">
+                              Aadhar Front: Not uploaded
+                            </div>
+                          )}
+
+                          {/* Aadhar Back */}
+                          {app.aadhar_back ? (
+                            <div className="bg-[#222222] border border-[#353535] rounded-xl p-3 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-9 h-9 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 flex items-center justify-center shrink-0">
+                                  <FileText className="w-4 h-4 text-[#F5C542]" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-white text-xs font-bold truncate">Aadhar Back Side</p>
+                                  <p className="text-[#888] text-[10px]">
+                                    {app.aadhar_back.endsWith('.pdf') ? 'PDF Document' : 'Image File'}
+                                  </p>
+                                </div>
+                              </div>
+                              <a
+                                href={app.aadhar_back}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F5C542]/15 hover:bg-[#F5C542]/25 text-[#F5C542] border border-[#F5C542]/30 rounded-lg text-xs font-semibold transition shrink-0"
+                              >
+                                <span>Open</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="bg-[#222222]/50 border border-[#353535] rounded-xl p-3 text-[#777] text-xs">
+                              Aadhar Back: Not uploaded
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    ))}
+                    )}
+
                     {app.remarks && (
-                      <div className="col-span-full bg-[#222222] border border-[#353535] rounded-xl px-3 py-2">
+                      <div className="bg-[#222222] border border-[#353535] rounded-xl px-3 py-2">
                         <p className="text-[#888] text-[10px] uppercase font-bold tracking-wider mb-0.5">Remarks</p>
                         <p className="text-white text-xs">{app.remarks}</p>
                       </div>
                     )}
                     {app.status === 'REJECTED' && app.rejection_reason && (
-                      <div className="col-span-full bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
                         <p className="text-red-400 text-[10px] uppercase font-bold tracking-wider mb-0.5">Rejection Reason</p>
                         <p className="text-red-300 text-xs">{app.rejection_reason}</p>
                       </div>

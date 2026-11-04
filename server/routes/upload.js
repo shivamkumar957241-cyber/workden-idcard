@@ -20,50 +20,62 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  if (allowedTypes.includes(file.mimetype)) {
+  const allowedTypes = [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'application/pdf'
+  ];
+  if (allowedTypes.includes(file.mimetype) || file.originalname.match(/\.(jpg|jpeg|png|webp|gif|pdf)$/i)) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPEG, PNG, WebP and GIF images are allowed.'), false);
+    cb(new Error('Only JPEG, PNG, WebP, GIF images and PDF documents are allowed.'), false);
   }
 };
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter
 });
 
-// POST /api/upload/photo - Upload photo via multipart/form-data
-router.post('/photo', upload.single('photo'), (req, res) => {
+const handleFileUpload = (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, error: 'No file uploaded. Please select a JPEG or PNG image.' });
+    const uploadedFile = req.file || (req.files && req.files[0]);
+    if (!uploadedFile) {
+      return res.status(400).json({ success: false, error: 'No file uploaded. Please select an image or PDF.' });
     }
-    const fileUrl = `/uploads/${req.file.filename}`;
+    const fileUrl = `/uploads/${uploadedFile.filename}`;
     res.json({
       success: true,
-      message: 'Photo uploaded successfully.',
+      message: 'File uploaded successfully.',
       fileUrl,
-      filename: req.file.filename
+      photo_url: fileUrl,
+      filename: uploadedFile.filename,
+      originalName: uploadedFile.originalname,
+      isPdf: uploadedFile.mimetype === 'application/pdf' || uploadedFile.filename.endsWith('.pdf')
     });
   } catch (err) {
     console.error('Upload error:', err);
     res.status(500).json({ success: false, error: err.message || 'Server error during upload.' });
   }
-});
+};
 
-// POST /api/upload/base64 - Upload photo as base64 string (for browser-based capture)
+// Accept uploads at root POST /api/upload and /photo, /file, /document
+router.post('/', upload.any(), handleFileUpload);
+router.post('/photo', upload.any(), handleFileUpload);
+router.post('/file', upload.any(), handleFileUpload);
+router.post('/document', upload.any(), handleFileUpload);
+
+// POST /api/upload/base64 - Upload photo or PDF document as base64 string
 router.post('/base64', (req, res) => {
   try {
-    const { base64, extension } = req.body;
+    const { base64, extension, originalName } = req.body;
     if (!base64) {
       return res.status(400).json({ success: false, error: 'No base64 data provided.' });
     }
 
-    // Strip data URL prefix if present
-    const base64Data = base64.replace(/^data:image\/\w+;base64,/, '');
-    const ext = extension || 'jpg';
+    // Strip any data URL prefix (e.g. data:image/png;base64, or data:application/pdf;base64,)
+    const base64Data = base64.replace(/^data:[^;]+;base64,/, '');
+    const ext = extension || (base64.startsWith('data:application/pdf') ? 'pdf' : 'jpg');
     const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
     const filePath = path.join(uploadDir, filename);
 
@@ -72,9 +84,11 @@ router.post('/base64', (req, res) => {
     const fileUrl = `/uploads/${filename}`;
     res.json({
       success: true,
-      message: 'Photo uploaded successfully.',
+      message: 'File uploaded successfully.',
       fileUrl,
-      filename
+      photo_url: fileUrl,
+      filename,
+      isPdf: ext.toLowerCase() === 'pdf'
     });
   } catch (err) {
     console.error('Base64 upload error:', err);

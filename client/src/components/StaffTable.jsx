@@ -9,7 +9,14 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
-  Trash2
+  Trash2,
+  FileText,
+  ExternalLink,
+  X,
+  Building2,
+  MapPin,
+  CreditCard,
+  UserCheck
 } from 'lucide-react';
 import { formatDateIST } from '../utils/date';
 
@@ -29,6 +36,7 @@ export default function StaffTable({
   onDeleteCard
 }) {
   const [selectedStaffIds, setSelectedStaffIds] = useState([]);
+  const [selectedDetailStaff, setSelectedDetailStaff] = useState(null);
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -244,6 +252,13 @@ export default function StaffTable({
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
+                          onClick={() => setSelectedDetailStaff(s)}
+                          className="p-1.5 rounded-lg text-[#888] hover:text-[#F5C542] hover:bg-[#222222] transition cursor-pointer"
+                          title="View Profile & Aadhar Card"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => onPreviewCard(s)}
                           className="p-1.5 rounded-lg text-[#888] hover:text-[#F5C542] hover:bg-[#222222] transition cursor-pointer"
                           title="Preview ID Card"
@@ -310,6 +325,149 @@ export default function StaffTable({
           </div>
         )}
       </div>
+
+      {/* Staff Profile & Documents Detail Modal */}
+      {selectedDetailStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-[#171717] rounded-3xl border border-[#353535] max-w-2xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-[#353535] pb-4">
+              <div className="flex items-center gap-3">
+                <img
+                  src={selectedDetailStaff.photo_url || '/logo.png'}
+                  alt={selectedDetailStaff.full_name}
+                  className="w-14 h-14 rounded-2xl object-cover border border-[#353535] shadow bg-black"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-white font-bold text-lg">{selectedDetailStaff.full_name}</h3>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                      selectedDetailStaff.card_status === 'ACTIVE'
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                    }`}>
+                      {selectedDetailStaff.card_status || 'PENDING'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-mono text-[#F5C542] mt-0.5">{selectedDetailStaff.staff_id} • {selectedDetailStaff.designation}</p>
+                  <p className="text-[11px] text-[#888]">{selectedDetailStaff.department} • {selectedDetailStaff.work_location || 'Headquarters'}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDetailStaff(null)}
+                className="p-2 text-[#888] hover:text-white rounded-xl hover:bg-[#222222] transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Info Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[
+                { label: 'Mobile Number', value: selectedDetailStaff.mobile },
+                { label: 'Email Address', value: selectedDetailStaff.email },
+                { label: 'City', value: selectedDetailStaff.city || 'Not specified' },
+                { label: 'Qualification', value: selectedDetailStaff.qualification || 'Not specified' },
+                { label: 'Aadhar Number', value: selectedDetailStaff.aadhar_number || 'Not specified' },
+                { label: 'Joining Date', value: formatDateIST(selectedDetailStaff.joining_date) },
+                { label: 'Card Expiry', value: selectedDetailStaff.expiry_date ? formatDateIST(selectedDetailStaff.expiry_date) : '1 Year' },
+                { label: 'Residential Address', value: selectedDetailStaff.residential_address || 'Not specified' },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-[#222222] border border-[#353535] rounded-xl p-3">
+                  <p className="text-[#888] text-[10px] uppercase font-bold tracking-wider mb-0.5">{label}</p>
+                  <p className="text-white text-xs font-semibold break-words">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Aadhar Documents Section */}
+            <div className="bg-[#121212] border border-[#353535] rounded-2xl p-4 space-y-3">
+              <h4 className="text-xs font-bold text-[#F5C542] uppercase tracking-wider flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Aadhar Card Documents
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Front */}
+                <div className="bg-[#1c1c1c] border border-[#353535] rounded-xl p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-[#F5C542]" />
+                    </div>
+                    <div>
+                      <p className="text-white text-xs font-bold">Aadhar Front</p>
+                      <p className="text-[#888] text-[10px]">
+                        {selectedDetailStaff.aadhar_front ? (selectedDetailStaff.aadhar_front.endsWith('.pdf') ? 'PDF Document' : 'Image File') : 'Not uploaded'}
+                      </p>
+                    </div>
+                  </div>
+                  {selectedDetailStaff.aadhar_front ? (
+                    <a
+                      href={selectedDetailStaff.aadhar_front}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-[#F5C542]/15 hover:bg-[#F5C542]/25 text-[#F5C542] border border-[#F5C542]/30 rounded-lg text-xs font-semibold transition"
+                    >
+                      <span>View</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <span className="text-[#666] text-xs">No file</span>
+                  )}
+                </div>
+
+                {/* Back */}
+                <div className="bg-[#1c1c1c] border border-[#353535] rounded-xl p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-[#F5C542]" />
+                    </div>
+                    <div>
+                      <p className="text-white text-xs font-bold">Aadhar Back</p>
+                      <p className="text-[#888] text-[10px]">
+                        {selectedDetailStaff.aadhar_back ? (selectedDetailStaff.aadhar_back.endsWith('.pdf') ? 'PDF Document' : 'Image File') : 'Not uploaded'}
+                      </p>
+                    </div>
+                  </div>
+                  {selectedDetailStaff.aadhar_back ? (
+                    <a
+                      href={selectedDetailStaff.aadhar_back}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-[#F5C542]/15 hover:bg-[#F5C542]/25 text-[#F5C542] border border-[#F5C542]/30 rounded-lg text-xs font-semibold transition"
+                    >
+                      <span>View</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <span className="text-[#666] text-xs">No file</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const s = selectedDetailStaff;
+                  setSelectedDetailStaff(null);
+                  onPreviewCard(s);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-[#F5C542] text-black font-extrabold rounded-xl text-xs shadow-md shadow-[#F5C542]/20 hover:bg-[#FFD84D] transition cursor-pointer"
+              >
+                <Eye className="w-4 h-4" /> Preview ID Card
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDetailStaff(null)}
+                className="px-4 py-2.5 bg-[#222222] hover:bg-[#2a2a2a] text-[#B5B5B5] hover:text-white border border-[#353535] rounded-xl text-xs font-semibold transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

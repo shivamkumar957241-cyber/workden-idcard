@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   CreditCard, Clock, CheckCircle2, XCircle, AlertCircle,
   Download, QrCode, LogOut, User, Send, Upload, Eye,
-  Shield, Calendar, Phone, Mail, Building2, Loader2, RefreshCw, Check
+  Shield, Calendar, Phone, Mail, Building2, Loader2, RefreshCw, Check,
+  FileText, File
 } from 'lucide-react';
 import { authFetch, getToken } from '../api';
 import { formatIST, formatDateIST } from '../utils/date';
@@ -49,6 +50,11 @@ export default function UserDashboard({ user, onLogout }) {
     user_category: 'WorkDen Member',
     current_plan: '₹499 – Full Access',
     residential_address: '',
+    city: '',
+    qualification: '',
+    aadhar_number: '',
+    aadhar_front: '',
+    aadhar_back: '',
     father_name: '',
     dob: '',
     gender: 'Male',
@@ -59,7 +65,11 @@ export default function UserDashboard({ user, onLogout }) {
   });
   const [photoPreview, setPhotoPreview] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadingAadharFront, setUploadingAadharFront] = useState(false);
+  const [uploadingAadharBack, setUploadingAadharBack] = useState(false);
   const fileInputRef = useRef(null);
+  const aadharFrontInputRef = useRef(null);
+  const aadharBackInputRef = useRef(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -121,6 +131,47 @@ export default function UserDashboard({ user, onLogout }) {
     }
   };
 
+  const handleAadharUpload = async (file, side) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Aadhar document must be under 10MB.');
+      return;
+    }
+    const isFront = side === 'front';
+    if (isFront) setUploadingAadharFront(true);
+    else setUploadingAadharBack(true);
+    setError('');
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target.result;
+        const ext = file.name.split('.').pop().toLowerCase();
+        const res = await authFetch('/api/upload/base64', {
+          method: 'POST',
+          body: JSON.stringify({ base64, extension: ext, originalName: file.name })
+        });
+        const json = await res.json();
+        if (json.success) {
+          if (isFront) {
+            setForm(prev => ({ ...prev, aadhar_front: json.fileUrl }));
+          } else {
+            setForm(prev => ({ ...prev, aadhar_back: json.fileUrl }));
+          }
+        } else {
+          setError('Aadhar upload failed: ' + (json.error || 'Unknown error'));
+        }
+        if (isFront) setUploadingAadharFront(false);
+        else setUploadingAadharBack(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setError('Aadhar upload failed. Please try again.');
+      if (isFront) setUploadingAadharFront(false);
+      else setUploadingAadharBack(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -128,6 +179,11 @@ export default function UserDashboard({ user, onLogout }) {
     if (form.application_type === 'STAFF') {
       if (!form.department) { setError('Department is required for Staff ID.'); return; }
       if (!form.designation) { setError('Designation is required for Staff ID.'); return; }
+      if (!form.city) { setError('City is required for Staff ID.'); return; }
+      if (!form.qualification) { setError('Qualification is required for Staff ID.'); return; }
+      if (!form.aadhar_number) { setError('Aadhar number is required for Staff ID.'); return; }
+      if (!form.aadhar_front) { setError('Please upload Aadhar card Front side (JPG or PDF).'); return; }
+      if (!form.aadhar_back) { setError('Please upload Aadhar card Back side (JPG or PDF).'); return; }
     }
     setSubmitting(true);
     try {
@@ -670,6 +726,170 @@ export default function UserDashboard({ user, onLogout }) {
                         onChange={e => setForm(p => ({ ...p, work_location: e.target.value }))}
                         className="w-full bg-[#222222] border border-[#353535] rounded-xl px-4 py-3 text-white placeholder-[#666] text-sm focus:outline-none focus:border-[#F5C542] transition-all"
                       />
+                    </div>
+
+                    {/* City */}
+                    <div>
+                      <label className="block text-[#B5B5B5] text-xs font-semibold mb-1.5 uppercase tracking-wider">
+                        City <span className="text-[#F5C542]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={form.city}
+                        placeholder="e.g. Noida, New Delhi, Lucknow"
+                        onChange={e => setForm(p => ({ ...p, city: e.target.value }))}
+                        className="w-full bg-[#222222] border border-[#353535] rounded-xl px-4 py-3 text-white placeholder-[#666] text-sm focus:outline-none focus:border-[#F5C542] transition-all"
+                        required
+                      />
+                    </div>
+
+                    {/* Qualification */}
+                    <div>
+                      <label className="block text-[#B5B5B5] text-xs font-semibold mb-1.5 uppercase tracking-wider">
+                        Qualification <span className="text-[#F5C542]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={form.qualification}
+                        placeholder="e.g. Graduate / B.Tech / MBA / Diploma"
+                        onChange={e => setForm(p => ({ ...p, qualification: e.target.value }))}
+                        className="w-full bg-[#222222] border border-[#353535] rounded-xl px-4 py-3 text-white placeholder-[#666] text-sm focus:outline-none focus:border-[#F5C542] transition-all"
+                        required
+                      />
+                    </div>
+
+                    {/* Aadhar Number */}
+                    <div className="sm:col-span-2">
+                      <label className="block text-[#B5B5B5] text-xs font-semibold mb-1.5 uppercase tracking-wider">
+                        Enter Aadhar Number <span className="text-[#F5C542]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={14}
+                        value={form.aadhar_number}
+                        placeholder="12-digit Aadhar (e.g. 1234 5678 9012)"
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '').slice(0, 12);
+                          const formatted = raw.replace(/(\d{4})(?=\d)/g, '$1 ');
+                          setForm(p => ({ ...p, aadhar_number: formatted }));
+                        }}
+                        className="w-full bg-[#222222] border border-[#353535] rounded-xl px-4 py-3 text-white placeholder-[#666] text-sm font-mono focus:outline-none focus:border-[#F5C542] transition-all"
+                        required
+                      />
+                    </div>
+
+                    {/* Upload Aadhar Card (Front & Back) */}
+                    <div className="sm:col-span-2 pt-3 border-t border-[#353535]">
+                      <label className="block text-[#B5B5B5] text-xs font-bold mb-1 uppercase tracking-wider">
+                        Upload Aadhar Card (Front & Back Side) <span className="text-[#F5C542]">*</span>
+                      </label>
+                      <p className="text-[#888] text-[11px] mb-3">Upload clear photo or PDF document of both sides of your Aadhar card (Max 10MB each - JPG, PNG or PDF)</p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Aadhar Front */}
+                        <div className="bg-[#171717] border border-[#353535] rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                          <input
+                            ref={aadharFrontInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
+                            className="hidden"
+                            onChange={e => handleAadharUpload(e.target.files[0], 'front')}
+                          />
+                          <div className="w-10 h-10 rounded-xl bg-[#222222] flex items-center justify-center mb-2 text-[#F5C542]">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <p className="text-white text-xs font-bold">Aadhar Card (Front Side)</p>
+                          <p className="text-[#888] text-[10px] mb-2.5">JPEG, PNG or PDF Document</p>
+
+                          {form.aadhar_front ? (
+                            <div className="w-full flex items-center justify-between bg-[#222222] border border-emerald-500/30 rounded-lg p-2.5 mt-1">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                <span className="text-emerald-300 text-xs font-medium truncate">Front Uploaded</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={form.aadhar_front}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-[#888] hover:text-white"
+                                >
+                                  View
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => aadharFrontInputRef.current?.click()}
+                                  className="text-xs text-[#F5C542] hover:underline cursor-pointer"
+                                >
+                                  Change
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => aadharFrontInputRef.current?.click()}
+                              disabled={uploadingAadharFront}
+                              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-[#222222] hover:bg-[#2a2a2a] border border-[#353535] text-white rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                            >
+                              {uploadingAadharFront ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F5C542]" /> : <Upload className="w-3.5 h-3.5 text-[#F5C542]" />}
+                              {uploadingAadharFront ? 'Uploading...' : 'Choose Front File'}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Aadhar Back */}
+                        <div className="bg-[#171717] border border-[#353535] rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                          <input
+                            ref={aadharBackInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
+                            className="hidden"
+                            onChange={e => handleAadharUpload(e.target.files[0], 'back')}
+                          />
+                          <div className="w-10 h-10 rounded-xl bg-[#222222] flex items-center justify-center mb-2 text-[#F5C542]">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <p className="text-white text-xs font-bold">Aadhar Card (Back Side)</p>
+                          <p className="text-[#888] text-[10px] mb-2.5">JPEG, PNG or PDF Document</p>
+
+                          {form.aadhar_back ? (
+                            <div className="w-full flex items-center justify-between bg-[#222222] border border-emerald-500/30 rounded-lg p-2.5 mt-1">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                <span className="text-emerald-300 text-xs font-medium truncate">Back Uploaded</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={form.aadhar_back}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-[#888] hover:text-white"
+                                >
+                                  View
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => aadharBackInputRef.current?.click()}
+                                  className="text-xs text-[#F5C542] hover:underline cursor-pointer"
+                                >
+                                  Change
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => aadharBackInputRef.current?.click()}
+                              disabled={uploadingAadharBack}
+                              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-[#222222] hover:bg-[#2a2a2a] border border-[#353535] text-white rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                            >
+                              {uploadingAadharBack ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F5C542]" /> : <Upload className="w-3.5 h-3.5 text-[#F5C542]" />}
+                              {uploadingAadharBack ? 'Uploading...' : 'Choose Back File'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

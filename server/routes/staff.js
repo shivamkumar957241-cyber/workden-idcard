@@ -140,6 +140,11 @@ router.post('/', (req, res) => {
       mobile,
       email,
       residential_address,
+      city,
+      qualification,
+      aadhar_number,
+      aadhar_front,
+      aadhar_back,
       designation,
       department,
       joining_date,
@@ -199,9 +204,10 @@ router.post('/', (req, res) => {
       const profileStmt = db.prepare(`
         INSERT INTO staff_profiles (
           staff_id, full_name, father_name, dob, gender, photo_url, mobile, email,
-          residential_address, designation, department, joining_date, employment_type,
+          residential_address, city, qualification, aadhar_number, aadhar_front, aadhar_back,
+          designation, department, joining_date, employment_type,
           reporting_manager, reporting_manager_id, work_location, employment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const profileRes = profileStmt.run(
@@ -214,6 +220,11 @@ router.post('/', (req, res) => {
         mobile.trim(),
         email.trim().toLowerCase(),
         residential_address ? residential_address.trim() : null,
+        city ? city.trim() : null,
+        qualification ? qualification.trim() : null,
+        aadhar_number ? aadhar_number.trim() : null,
+        aadhar_front || null,
+        aadhar_back || null,
         designation.trim(),
         department.trim(),
         joining_date,
@@ -359,7 +370,8 @@ router.put('/:id', (req, res) => {
 
     const {
       full_name, father_name, dob, gender, photo_url, mobile, email,
-      residential_address, designation, department, joining_date,
+      residential_address, city, qualification, aadhar_number, aadhar_front, aadhar_back,
+      designation, department, joining_date,
       employment_type, reporting_manager, reporting_manager_id,
       work_location, employment_status, authorized_by, remarks
     } = req.body;
@@ -368,7 +380,9 @@ router.put('/:id', (req, res) => {
       db.prepare(`
         UPDATE staff_profiles
         SET full_name = ?, father_name = ?, dob = ?, gender = ?, photo_url = ?,
-            mobile = ?, email = ?, residential_address = ?, designation = ?,
+            mobile = ?, email = ?, residential_address = ?, city = ?, qualification = ?,
+            aadhar_number = ?, aadhar_front = ?, aadhar_back = ?,
+            designation = ?,
             department = ?, joining_date = ?, employment_type = ?,
             reporting_manager = ?, reporting_manager_id = ?,
             work_location = ?, employment_status = ?, updated_at = CURRENT_TIMESTAMP
@@ -382,6 +396,11 @@ router.put('/:id', (req, res) => {
         mobile || staff.mobile,
         email || staff.email,
         residential_address !== undefined ? residential_address : staff.residential_address,
+        city !== undefined ? city : staff.city,
+        qualification !== undefined ? qualification : staff.qualification,
+        aadhar_number !== undefined ? aadhar_number : staff.aadhar_number,
+        aadhar_front !== undefined ? aadhar_front : staff.aadhar_front,
+        aadhar_back !== undefined ? aadhar_back : staff.aadhar_back,
         designation || staff.designation,
         department || staff.department,
         joining_date || staff.joining_date,

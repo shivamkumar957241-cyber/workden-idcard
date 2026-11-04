@@ -9,8 +9,9 @@ router.post('/', requireAuth, (req, res) => {
     const userId = req.user.id;
     const {
       application_type, full_name, photo_url, mobile, email,
-      designation, department, residential_address, father_name,
-      dob, gender, joining_date, employment_type, work_location,
+      designation, department, residential_address, city, qualification,
+      aadhar_number, aadhar_front, aadhar_back,
+      father_name, dob, gender, joining_date, employment_type, work_location,
       user_category, current_plan, remarks
     } = req.body;
 
@@ -38,12 +39,16 @@ router.post('/', requireAuth, (req, res) => {
     const result = db.prepare(`
       INSERT INTO id_applications (
         applicant_user_id, application_type, full_name, photo_url, mobile, email,
-        designation, department, residential_address, father_name, dob, gender,
+        designation, department, residential_address, city, qualification,
+        aadhar_number, aadhar_front, aadhar_back,
+        father_name, dob, gender,
         joining_date, employment_type, work_location, user_category, current_plan, remarks
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       userId, appType, full_name.trim(), photo_url || null, mobile.trim(), email.trim(),
       designation || null, department || null, residential_address || null,
+      city || null, qualification || null, aadhar_number || null,
+      aadhar_front || null, aadhar_back || null,
       father_name || null, dob || null, gender || null,
       joining_date || null, employment_type || null, work_location || null,
       appType === 'STAFF' ? null : (user_category || 'WorkDen Member'),
@@ -183,13 +188,16 @@ router.post('/:id/approve', requireAuth, requireAdmin, (req, res) => {
       const staffRes = db.prepare(`
         INSERT INTO staff_profiles (
           staff_id, full_name, father_name, dob, gender, photo_url, mobile, email,
-          residential_address, designation, department, joining_date, employment_type,
+          residential_address, city, qualification, aadhar_number, aadhar_front, aadhar_back,
+          designation, department, joining_date, employment_type,
           work_location, employment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')
       `).run(
         staffId, app.full_name, app.father_name, app.dob, app.gender, app.photo_url,
-        app.mobile, app.email, app.residential_address, app.designation || 'Staff',
-        app.department || 'General', app.joining_date || today,
+        app.mobile, app.email, app.residential_address, app.city || null,
+        app.qualification || null, app.aadhar_number || null,
+        app.aadhar_front || null, app.aadhar_back || null,
+        app.designation || 'Staff', app.department || 'General', app.joining_date || today,
         app.employment_type || 'Full-time', app.work_location || null
       );
       profileId = staffRes.lastInsertRowid;
