@@ -1,0 +1,31 @@
+{
+  "name": "workden-id-card",
+  "version": "1.0.0",
+  "description": "WorkDen Professional ID Card Management & QR Verification System",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "build": "cd client && npm install && npm run build",
+    "install:all": "npm install && cd client && npm install",
+    "dev": "node server/server.js"
+  },
+  "keywords": [
+    "workden",
+    "id-card",
+    "qr-verification",
+    "staff-id",
+    "user-id",
+    "rfid"
+  ],
+  "author": "WorkDen Operations & Engineering",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^1.4.5-lts.1",
+    "qrcode": "^1.5.4"
+  }
+}

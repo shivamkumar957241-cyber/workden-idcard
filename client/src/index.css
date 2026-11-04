@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #020617;
+    color: #f8fafc;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Universal Form Control Contrast & Legibility Fix */
+input, select, textarea {
+  color: #f8fafc;
+  background-color: rgba(15, 23, 42, 0.7);
+}
+
+/* Light background safety override: ensure dark text on light containers */
+.bg-white input, .bg-white select, .bg-white textarea,
+.bg-slate-50 input, .bg-slate-50 select, .bg-slate-50 textarea,
+.bg-slate-100 input, .bg-slate-100 select, .bg-slate-100 textarea {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+.bg-white, .bg-slate-50, .bg-slate-100 {
+  color: #0f172a;
+}
+
+.bg-white label, .bg-slate-50 label, .bg-slate-100 label {
+  color: #1e293b !important;
+}
+
+/* Printable ID Card Dimensions (Standard CR80: 85.60 x 53.98mm ratio ~ 1.586) */
+.id-card-cr80 {
+  width: 340px;
+  height: 214px;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-card-area, .print-card-area * {
+    visibility: visible;
+  }
+  .print-card-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
