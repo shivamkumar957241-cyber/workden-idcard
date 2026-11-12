@@ -260,5 +260,6 @@ if (require.main === module) {
 module.exports = {
   repairDatabase,
   moveOrCopyDbFiles,
-  checkIntegrity
+  checkIntegrity,
+  copyAllSalvageableData
 };
