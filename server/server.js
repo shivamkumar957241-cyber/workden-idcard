@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { updateExpiredCards } = require('./db');
+const { updateExpiredCards, checkpointAndClose } = require('./db');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 
 const app = express();
@@ -98,5 +98,20 @@ const server = app.listen(PORT, () => {
   console.log(`🔍 Verify API: http://localhost:${PORT}/api/verify/:token`);
   console.log(`=======================================================`);
 });
+
+function shutdownGracefully(signal) {
+  console.log(`\nReceived ${signal}. Flushing database and shutting down...`);
+  server.close(() => {
+    checkpointAndClose();
+    process.exit(0);
+  });
+  setTimeout(() => {
+    checkpointAndClose();
+    process.exit(0);
+  }, 3000).unref();
+}
+
+process.on('SIGINT', () => shutdownGracefully('SIGINT'));
+process.on('SIGTERM', () => shutdownGracefully('SIGTERM'));
 
 module.exports = { app, server };

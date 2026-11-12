@@ -2,9 +2,15 @@
 node_modules/
 client/node_modules/
 
-# SQLite WAL and temporary cache files
+# SQLite database, WAL, temporary cache files & backups
+server/*.db
 server/*.db-wal
 server/*.db-shm
+server/backups/
+
+# Uploaded media files (keep folder via .gitkeep)
+server/uploads/*
+!server/uploads/.gitkeep
 
 # Environment & secrets
 .env

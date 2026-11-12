@@ -3,13 +3,35 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const { repairDatabase } = require('./repair-db');
 
 const dbPath = path.join(__dirname, 'workden_idcard.db');
-const db = new Database(dbPath);
 
-// Enable foreign keys and WAL mode for high performance & safe concurrency
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+function openDatabaseConnection() {
+  // Clean orphaned WAL/SHM if main .db file does not exist
+  if (!fs.existsSync(dbPath) && (fs.existsSync(dbPath + '-wal') || fs.existsSync(dbPath + '-shm'))) {
+    const res = repairDatabase(dbPath);
+    console.warn('⚠️ Cleaned orphaned WAL/SHM files before creating database:', res);
+  }
+  const conn = new Database(dbPath);
+  try {
+    const qc = conn.pragma('quick_check');
+    const isOk = Array.isArray(qc) && qc.length === 1 && qc[0].quick_check === 'ok';
+    if (!isOk) {
+      const err = new Error('Database quick_check failed: ' + JSON.stringify(qc));
+      err.code = 'SQLITE_CORRUPT';
+      throw err;
+    }
+    conn.pragma('journal_mode = WAL');
+    conn.pragma('foreign_keys = ON');
+    return conn;
+  } catch (err) {
+    try { conn.close(); } catch {}
+    throw err;
+  }
+}
+
+let db;
 
 function initDatabase() {
   db.exec(`
@@ -387,7 +409,36 @@ function updateExpiredCards() {
   }
 }
 
-initDatabase();
+try {
+  db = openDatabaseConnection();
+  initDatabase();
+} catch (err) {
+  const isCorrupt = err && (err.code === 'SQLITE_CORRUPT' || /malformed|corrupt/i.test(err.message || ''));
+  if (!isCorrupt) {
+    throw err;
+  }
+  console.error('⚠️ Database corruption detected on startup:', err.message);
+  if (db) {
+    try { db.close(); } catch {}
+    db = null;
+  }
+  const repairResult = repairDatabase(dbPath);
+  console.log('🛠️ Automatic database repair result:', JSON.stringify(repairResult));
+  db = openDatabaseConnection();
+  initDatabase();
+}
+
+function checkpointAndClose() {
+  if (!db) return;
+  try {
+    db.pragma('wal_checkpoint(TRUNCATE)');
+  } catch (err) {
+    console.error('WAL checkpoint error:', err.message);
+  }
+  try {
+    db.close();
+  } catch {}
+}
 
 module.exports = {
   db,
@@ -395,5 +446,6 @@ module.exports = {
   generateUserIdCode,
   generateSecureToken,
   logAudit,
-  updateExpiredCards
+  updateExpiredCards,
+  checkpointAndClose
 };
