@@ -31,6 +31,12 @@ git reset --hard origin/main
 
 echo [4/5] Installing dependencies and verifying database...
 call npm install --omit=dev >nul 2>&1
+if not exist ".env" (
+  if exist ".env.example" (
+    copy /Y ".env.example" ".env" >nul 2>&1
+    echo Created .env configuration file from template.
+  )
+)
 if not exist "server\workden_idcard.db" (
   if exist "!BKDIR!\workden_idcard.db" (
     copy /Y "!BKDIR!\workden_idcard.db*" "server\" >nul 2>&1
