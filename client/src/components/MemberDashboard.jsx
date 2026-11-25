@@ -169,15 +169,23 @@ export default function MemberDashboard({ user, onLogout }) {
   // Load Razorpay Checkout Script Dynamically
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
-      if (window.Razorpay) {
+      if (typeof window !== 'undefined' && window.Razorpay) {
         resolve(true);
         return;
       }
+      const existing = document.getElementById('razorpay-checkout-script');
+      if (existing) {
+        existing.onload = () => resolve(true);
+        existing.onerror = () => resolve(false);
+        return;
+      }
       const script = document.createElement('script');
+      script.id = 'razorpay-checkout-script';
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
       script.onload = () => resolve(true);
       script.onerror = () => resolve(false);
-      document.body.appendChild(script);
+      document.head.appendChild(script);
     });
   };
 
@@ -189,8 +197,10 @@ export default function MemberDashboard({ user, onLogout }) {
 
     try {
       const loaded = await loadRazorpayScript();
-      if (!loaded) {
-        setError('Failed to load Razorpay payment SDK. Please check your internet connection.');
+      if (!loaded || typeof window === 'undefined' || !window.Razorpay) {
+        const msg = 'Failed to load Razorpay payment SDK. Please check your internet connection or ad blocker.';
+        alert(msg);
+        setError(msg);
         setPaying(false);
         return;
       }
@@ -203,7 +213,9 @@ export default function MemberDashboard({ user, onLogout }) {
       const orderData = await orderRes.json();
 
       if (!orderData.success) {
-        setError(orderData.error || 'Could not initiate payment order.');
+        const msg = orderData.error || 'Could not initiate payment order.';
+        alert(msg);
+        setError(msg);
         setPaying(false);
         return;
       }
@@ -213,17 +225,24 @@ export default function MemberDashboard({ user, onLogout }) {
         key: orderData.key_id || 'rzp_live_U4VD9FTceH5P0x',
         amount: orderData.amount || 9900,
         currency: orderData.currency || 'INR',
-        name: 'WorkDen Unified Spaces',
-        description: 'Official Member ID Card Download Fee',
+        name: 'WorkDen',
+        description: 'Official WorkDen Member ID Card Download Fee (₹99)',
         image: WORKDEN_LOGO_BASE64,
-        order_id: orderData.order_id,
         prefill: {
-          name: user?.full_name || form.full_name,
-          email: user?.email || form.email,
-          contact: application.mobile || form.mobile
+          name: user?.full_name || application.full_name || form.full_name || '',
+          email: user?.email || application.email || form.email || '',
+          contact: application.mobile || form.mobile || ''
         },
         theme: {
           color: '#F5C542'
+        },
+        modal: {
+          backdropclose: true,
+          escape: true,
+          ondismiss: function () {
+            console.log('Razorpay modal dismissed by user');
+            setPaying(false);
+          }
         },
         handler: async function (response) {
           // Step 3: Verify Payment on Server
@@ -232,9 +251,9 @@ export default function MemberDashboard({ user, onLogout }) {
             const verifyRes = await authFetch('/api/payments/verify', {
               method: 'POST',
               body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
+                razorpay_order_id: response.razorpay_order_id || orderData.order_id || orderData.tracking_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
+                razorpay_signature: response.razorpay_signature || null,
                 application_id: application.id,
                 payment_order_db_id: orderData.payment_order_db_id
               })
@@ -243,7 +262,7 @@ export default function MemberDashboard({ user, onLogout }) {
             if (verifyJson.success) {
               // Set payment data & open confirmation view
               setPaymentData({
-                order_id: response.razorpay_order_id,
+                order_id: response.razorpay_order_id || orderData.order_id || orderData.tracking_order_id || `dir_${application.id}_${Date.now()}`,
                 payment_id: response.razorpay_payment_id,
                 amount: 9900,
                 payment_order_id: verifyJson.payment_order_id || orderData.payment_order_db_id,
@@ -251,31 +270,38 @@ export default function MemberDashboard({ user, onLogout }) {
               });
               setActiveTab('payment-confirmation');
             } else {
-              setError(verifyJson.error || 'Payment signature verification failed.');
+              const vMsg = verifyJson.error || 'Payment signature verification failed.';
+              alert(vMsg);
+              setError(vMsg);
             }
           } catch (vErr) {
+            alert('Payment verification failed on server.');
             setError('Payment verification failed on server.');
           } finally {
             setVerifying(false);
             setPaying(false);
           }
-        },
-        modal: {
-          ondismiss: function () {
-            setPaying(false);
-          }
         }
       };
 
+      if (orderData.order_id) {
+        options.order_id = orderData.order_id;
+      }
+
+      console.log('Launching Razorpay checkout...');
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', function (resp) {
-        setError(resp.error?.description || 'Payment was unsuccessful. Please try again.');
+        console.error('Razorpay payment failed:', resp);
+        const errMsg = resp.error?.description || 'Payment was unsuccessful or cancelled.';
+        alert(errMsg);
+        setError(errMsg);
         setPaying(false);
       });
       rzp.open();
     } catch (err) {
-      console.error('Razorpay flow error:', err);
-      setError('An error occurred while launching payment.');
+      console.error('handlePayNow unexpected error:', err);
+      alert('Payment initialization error: ' + err.message);
+      setError('Payment initialization error: ' + err.message);
       setPaying(false);
     }
   };
@@ -513,11 +539,12 @@ export default function MemberDashboard({ user, onLogout }) {
 
                       {isApproved && !isDownloadUnlocked && (
                         <button
-                          onClick={() => setActiveTab('payment')}
-                          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#F5C542] to-amber-400 hover:brightness-110 text-black font-black text-xs sm:text-sm shadow-xl shadow-[#F5C542]/30 transition transform hover:-translate-y-0.5 cursor-pointer animate-pulse"
+                          onClick={handlePayNow}
+                          disabled={paying || verifying}
+                          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#F5C542] to-amber-400 hover:brightness-110 text-black font-black text-xs sm:text-sm shadow-xl shadow-[#F5C542]/30 transition transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
                         >
-                          <CreditCard className="w-4 h-4" />
-                          <span>Pay ₹99 & Unlock ID Card →</span>
+                          {paying || verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                          <span>{verifying ? 'Verifying...' : paying ? 'Opening Razorpay...' : 'Pay ₹99 & Unlock ID Card →'}</span>
                         </button>
                       )}
 
@@ -653,11 +680,12 @@ export default function MemberDashboard({ user, onLogout }) {
                       <div className="flex items-center gap-2">
                         {isApproved && !isDownloadUnlocked && (
                           <button
-                            onClick={() => setActiveTab('payment')}
-                            className="flex items-center gap-2 px-4 py-2 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer"
+                            onClick={handlePayNow}
+                            disabled={paying || verifying}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50"
                           >
-                            <CreditCard className="w-3.5 h-3.5" />
-                            <span>Pay ₹99 Now</span>
+                            {paying || verifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                            <span>{verifying ? 'Verifying...' : paying ? 'Opening Razorpay...' : 'Pay ₹99 Now'}</span>
                           </button>
                         )}
                         {isDownloadUnlocked && (

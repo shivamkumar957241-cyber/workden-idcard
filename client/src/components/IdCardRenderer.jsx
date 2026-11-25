@@ -354,9 +354,9 @@ function IdCardBack({ card, settings, cardRef }) {
   const accentColor = '#F5C542';
 
   const defaultRules = [
-    'This credential is official property of WorkDen.',
-    'Must be presented upon request to security personnel.',
-    'Non-transferable and must be surrendered upon cessation.',
+    'This credential is official property of WorkDen (workden.online).',
+    'Must be presented upon request for platform identity verification.',
+    'Non-transferable and valid for registered WorkDen access.',
     'Misuse, duplicate replication or tampering is strictly prohibited.'
   ];
 
@@ -364,10 +364,10 @@ function IdCardBack({ card, settings, cardRef }) {
     ? s.card_usage_rules.split('\n').filter(Boolean).map(r => r.replace(/^\d+\.\s*/, ''))
     : defaultRules;
 
-  const officeAddress = s.office_address || 'WorkDen Tower, Plot 14, Sector 62, Noida, UP 201301';
+  const officeAddress = s.office_address || 'MG Road, Ashok Nagar, Bangalore, Karnataka – 560001';
   const officialEmail = s.official_email || 'support@workden.online';
   const signatoryTitle = s.authorized_signatory || 'Director of Operations';
-  const lostInstructions = s.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686';
+  const lostInstructions = s.lost_card_instructions || 'If found, please return to WorkDen or email support@workden.online / WhatsApp +91 92627 25686';
 
   const issueDateFormatted = card.issue_date
     ? formatDateIST(card.issue_date)

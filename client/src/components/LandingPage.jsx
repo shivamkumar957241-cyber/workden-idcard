@@ -45,7 +45,7 @@ export default function LandingPage() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1c1c1c] border border-[#F5C542]/40 text-[#F5C542] text-xs font-bold mb-6 shadow-xl">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>WorkDen Unified Identity Management System</span>
+          <span>WorkDen Digital Task Platform • Official Identity Verification Portal</span>
         </div>
 
         {/* Hero Title */}
@@ -54,7 +54,7 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-[#888] text-sm sm:text-base mt-4 max-w-2xl leading-relaxed">
-          Welcome to the official identity portal. Please select your role to apply for your identity card, track approval status, or download your verified card.
+          Welcome to the official identity portal of WorkDen. Please select your role to apply for your official Identity Card, track review status, or download your verified card.
         </p>
 
         {/* Two Main Cards: Apply as Member vs Apply as Staff */}
@@ -74,13 +74,13 @@ export default function LandingPage() {
               </div>
 
               <p className="text-[#888] text-xs sm:text-sm mb-6 leading-relaxed">
-                For coworking members, dedicated desk clients, virtual office subscribers, and founders working at WorkDen spaces.
+                For registered digital task contributors, micro-task operators, form management, and transcription specialists on the WorkDen platform.
               </p>
 
               <div className="space-y-2.5 mb-8">
                 {[
                   '100% Free Application Submission',
-                  'Admin Review & Background Verification',
+                  'Admin Review & Identity Verification',
                   '₹99 Download Fee (Only after approval)',
                   'Encrypted QR Verification Token'
                 ].map(item => (
@@ -124,7 +124,7 @@ export default function LandingPage() {
               </div>
 
               <p className="text-[#888] text-xs sm:text-sm mb-6 leading-relaxed">
-                For official WorkDen team members, management, facility coordinators, operations, and community executives.
+                For official WorkDen team members, quality assurance (QA), task verifiers, and administrative staff.
               </p>
 
               <div className="space-y-2.5 mb-8">
@@ -183,7 +183,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-[#252525] bg-[#0E0E0E] px-4 sm:px-8 py-6 text-center text-xs text-[#777]">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>© {new Date().getFullYear()} WorkDen Unified Spaces. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} WorkDen. All rights reserved. • MSME: UDYAM-KR-03-0640514 • GSTIN: 10KEJPM6504N1Z7</p>
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/login?type=admin')}
@@ -192,7 +192,9 @@ export default function LandingPage() {
               Admin Portal
             </button>
             <span>•</span>
-            <span className="text-[#666]">Support: support@workden.online</span>
+            <span className="text-[#666]">support@workden.online</span>
+            <span>•</span>
+            <span className="text-[#666]">+91 92627 25686</span>
           </div>
         </div>
       </footer>

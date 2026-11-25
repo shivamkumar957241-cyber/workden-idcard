@@ -171,18 +171,18 @@ function initDatabase() {
     CREATE TABLE IF NOT EXISTS id_card_settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       company_name TEXT DEFAULT 'WORKDEN',
-      company_tagline TEXT DEFAULT 'OFFICIAL IDENTITY CARD',
+      company_tagline TEXT DEFAULT 'DIGITAL TASK PLATFORM • OFFICIAL CREDENTIAL',
       company_logo TEXT DEFAULT '/logo.png',
       company_website TEXT DEFAULT 'https://workden.online',
       official_email TEXT DEFAULT 'support@workden.online',
-      office_address TEXT DEFAULT 'WorkDen Tower, Plot 14, Sector 62, Noida, UP 201301',
+      office_address TEXT DEFAULT 'MG Road, Ashok Nagar, Bangalore, Karnataka – 560001',
       authorized_signatory TEXT DEFAULT 'Director - People & Operations',
       signature_image TEXT DEFAULT '/signature.png',
       primary_color TEXT DEFAULT '#0f172a',
       secondary_color TEXT DEFAULT '#1e3a8a',
       accent_color TEXT DEFAULT '#38bdf8',
-      card_usage_rules TEXT DEFAULT '1. This card is official property of WorkDen Unified Spaces.\n2. Must be visibly displayed at all times within premises.\n3. Non-transferable and must be surrendered upon request or employment cessation.\n4. Tampering or misuse is strictly prohibited.',
-      lost_card_instructions TEXT DEFAULT 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686',
+      card_usage_rules TEXT DEFAULT '1. This card is official property of WorkDen (workden.online).\n2. Must be presented upon request for platform identity verification.\n3. Non-transferable and valid for registered WorkDen access.\n4. Tampering, duplication, or misuse is strictly prohibited.',
+      lost_card_instructions TEXT DEFAULT 'If found, please return to WorkDen or email support@workden.online / WhatsApp +91 92627 25686',
       qr_position TEXT DEFAULT 'front_bottom_right',
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -352,53 +352,91 @@ function initDatabase() {
   seedInitialData();
 }
 
-// Generate Next Sequential Staff ID (WD-EMP-YYYY-00001) with transaction
+// Generate Next Sequential Staff ID (WD-EMP-YYYY-00001) with transaction and collision check
 function generateStaffId() {
   const currentYear = new Date().getFullYear();
   const prefix = `WD-EMP-${currentYear}-`;
 
   const getNextSeq = db.transaction(() => {
-    const row = db.prepare(`
+    const rowStaff = db.prepare(`
       SELECT staff_id FROM staff_profiles 
       WHERE staff_id LIKE ? 
       ORDER BY id DESC LIMIT 1
     `).get(`${prefix}%`);
 
-    let nextNumber = 1;
-    if (row && row.staff_id) {
-      const parts = row.staff_id.split('-');
+    const rowCard = db.prepare(`
+      SELECT entity_code FROM id_card_records 
+      WHERE entity_code LIKE ? 
+      ORDER BY id DESC LIMIT 1
+    `).get(`${prefix}%`);
+
+    let maxSeq = 0;
+    if (rowStaff && rowStaff.staff_id) {
+      const parts = rowStaff.staff_id.split('-');
       const lastSeq = parseInt(parts[parts.length - 1], 10);
-      if (!isNaN(lastSeq)) {
-        nextNumber = lastSeq + 1;
-      }
+      if (!isNaN(lastSeq) && lastSeq > maxSeq) maxSeq = lastSeq;
     }
-    return `${prefix}${String(nextNumber).padStart(5, '0')}`;
+    if (rowCard && rowCard.entity_code) {
+      const parts = rowCard.entity_code.split('-');
+      const lastSeq = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(lastSeq) && lastSeq > maxSeq) maxSeq = lastSeq;
+    }
+
+    let nextNumber = maxSeq + 1;
+    let candidate = `${prefix}${String(nextNumber).padStart(5, '0')}`;
+    while (
+      db.prepare('SELECT id FROM staff_profiles WHERE staff_id = ?').get(candidate) ||
+      db.prepare('SELECT id FROM id_card_records WHERE card_number = ? OR entity_code = ?').get(`CRD-STF-${candidate}`, candidate)
+    ) {
+      nextNumber++;
+      candidate = `${prefix}${String(nextNumber).padStart(5, '0')}`;
+    }
+    return candidate;
   });
 
   return getNextSeq();
 }
 
-// Generate Next Sequential User ID (WD-USER-YYYY-00001) with transaction
+// Generate Next Sequential User ID (WD-USER-YYYY-00001) with transaction and collision check
 function generateUserIdCode() {
   const currentYear = new Date().getFullYear();
   const prefix = `WD-USER-${currentYear}-`;
 
   const getNextSeq = db.transaction(() => {
-    const row = db.prepare(`
+    const rowUser = db.prepare(`
       SELECT user_id_code FROM user_id_profiles 
       WHERE user_id_code LIKE ? 
       ORDER BY id DESC LIMIT 1
     `).get(`${prefix}%`);
 
-    let nextNumber = 1;
-    if (row && row.user_id_code) {
-      const parts = row.user_id_code.split('-');
+    const rowCard = db.prepare(`
+      SELECT entity_code FROM id_card_records 
+      WHERE entity_code LIKE ? 
+      ORDER BY id DESC LIMIT 1
+    `).get(`${prefix}%`);
+
+    let maxSeq = 0;
+    if (rowUser && rowUser.user_id_code) {
+      const parts = rowUser.user_id_code.split('-');
       const lastSeq = parseInt(parts[parts.length - 1], 10);
-      if (!isNaN(lastSeq)) {
-        nextNumber = lastSeq + 1;
-      }
+      if (!isNaN(lastSeq) && lastSeq > maxSeq) maxSeq = lastSeq;
     }
-    return `${prefix}${String(nextNumber).padStart(5, '0')}`;
+    if (rowCard && rowCard.entity_code) {
+      const parts = rowCard.entity_code.split('-');
+      const lastSeq = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(lastSeq) && lastSeq > maxSeq) maxSeq = lastSeq;
+    }
+
+    let nextNumber = maxSeq + 1;
+    let candidate = `${prefix}${String(nextNumber).padStart(5, '0')}`;
+    while (
+      db.prepare('SELECT id FROM user_id_profiles WHERE user_id_code = ?').get(candidate) ||
+      db.prepare('SELECT id FROM id_card_records WHERE card_number = ? OR entity_code = ?').get(`CRD-USR-${candidate}`, candidate)
+    ) {
+      nextNumber++;
+      candidate = `${prefix}${String(nextNumber).padStart(5, '0')}`;
+    }
+    return candidate;
   });
 
   return getNextSeq();
