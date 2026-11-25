@@ -1,4 +1,4 @@
-require('dotenv').config();
+try { require('dotenv').config(); } catch {}
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
