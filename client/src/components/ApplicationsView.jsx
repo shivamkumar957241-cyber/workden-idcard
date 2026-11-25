@@ -13,10 +13,11 @@ const STATUS_BADGE = {
   REJECTED: { label: 'Rejected', class: 'bg-red-500/15 text-red-400 border-red-500/30' },
 };
 
-export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'PENDING' }) {
+export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'PENDING', filterType = 'ALL' }) {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [typeFilter, setTypeFilter] = useState(filterType);
   const [selectedApp, setSelectedApp] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -33,6 +34,7 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
     try {
       const params = new URLSearchParams();
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
+      if (typeFilter !== 'ALL') params.set('application_type', typeFilter);
       const res = await authFetch(`/api/applications?${params}`);
       const json = await res.json();
       if (json.success) setApplications(json.data || []);
@@ -40,7 +42,9 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchApplications(); }, [statusFilter]);
+  useEffect(() => {
+    fetchApplications();
+  }, [statusFilter, typeFilter]);
 
   const handleApprove = async (appId) => {
     setProcessing(true);
@@ -122,8 +126,16 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-white font-extrabold text-lg">ID Card Applications</h2>
-          <p className="text-[#888] text-xs mt-0.5">Review and process user-submitted ID card applications</p>
+          <h2 className="text-white font-extrabold text-lg">
+            {typeFilter === 'USER' ? 'Member ID Card Applications' : typeFilter === 'STAFF' ? 'Staff ID Card Applications' : 'ID Card Applications'}
+          </h2>
+          <p className="text-[#888] text-xs mt-0.5">
+            {typeFilter === 'USER'
+              ? 'Review Member applications (Free application, ₹99 payment required after approval to download)'
+              : typeFilter === 'STAFF'
+              ? 'Review WorkDen Staff applications (Completely FREE application and download)'
+              : 'Review and process all member & staff ID card applications'}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {pending.length > 0 && (
@@ -138,18 +150,41 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2">
-        {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(s => (
-          <button key={s} onClick={() => setStatusFilter(s)}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
-              statusFilter === s
-                ? 'bg-[#F5C542] text-black border-[#F5C542] shadow-md shadow-[#F5C542]/10'
-                : 'bg-[#171717] text-[#888] border-[#353535] hover:border-[#555] hover:text-white'
-            }`}>
-            {s === 'ALL' ? `All (${applications.length})` : `${s} (${applications.filter(a => a.status === s).length})`}
-          </button>
-        ))}
+      {/* Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {filterType === 'ALL' && (
+          <div className="flex gap-1.5 bg-[#171717] p-1 rounded-xl border border-[#353535]">
+            {[
+              { id: 'ALL', label: 'All Roles' },
+              { id: 'USER', label: 'Members Only' },
+              { id: 'STAFF', label: 'Staff Only' }
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTypeFilter(t.id)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  typeFilter === t.id ? 'bg-[#F5C542] text-black shadow-sm' : 'text-[#888] hover:text-white'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Filter status tabs */}
+        <div className="flex gap-2">
+          {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(s => (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                statusFilter === s
+                  ? 'bg-[#F5C542] text-black border-[#F5C542] shadow-md shadow-[#F5C542]/10'
+                  : 'bg-[#171717] text-[#888] border-[#353535] hover:border-[#555] hover:text-white'
+              }`}>
+              {s === 'ALL' ? `All (${applications.length})` : `${s} (${applications.filter(a => a.status === s).length})`}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -259,7 +294,25 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
                         ...(app.application_type !== 'STAFF' ? [
                           { label: 'User Category', value: app.user_category },
                           { label: 'Current Plan', value: app.current_plan },
-                        ] : []),
+                          {
+                            label: 'Payment Status (₹99)',
+                            value: app.payment_status === 'VERIFIED'
+                              ? 'Verified & Approved'
+                              : app.payment_status === 'PAID'
+                              ? 'Confirmation Submitted (Pending Approval)'
+                              : app.payment_status === 'REJECTED'
+                              ? 'Payment Rejected'
+                              : app.status === 'APPROVED'
+                              ? 'Pending Member Payment'
+                              : 'Not Required Yet'
+                          },
+                          {
+                            label: 'ID Card Download',
+                            value: app.download_unlocked === 1 ? 'Unlocked (Active)' : 'Locked (Pending Payment Approval)'
+                          }
+                        ] : [
+                          { label: 'Staff ID Card Download', value: app.status === 'APPROVED' ? 'Unlocked (Free)' : 'Pending Approval' }
+                        ]),
                         { label: 'Joining Date', value: formatDateIST(app.joining_date) },
                         { label: 'Date of Birth', value: formatDateIST(app.dob) },
                         { label: 'Gender', value: app.gender },

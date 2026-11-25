@@ -51,10 +51,10 @@ router.post('/login', (req, res) => {
   }
 });
 
-// POST /api/auth/register - Self-registration (creates USER account; admin creates STAFF)
+// POST /api/auth/register - Self-registration (creates USER or STAFF account; ADMIN only via seed)
 router.post('/register', (req, res) => {
   try {
-    const { email, password, full_name } = req.body;
+    const { email, password, full_name, account_type } = req.body;
     if (!email || !password || !full_name) {
       return res.status(400).json({ success: false, error: 'Name, email and password are required.' });
     }
@@ -67,11 +67,12 @@ router.post('/register', (req, res) => {
       return res.status(409).json({ success: false, error: 'An account with this email already exists.' });
     }
 
+    const assignedRole = account_type === 'STAFF' ? 'STAFF' : 'USER';
     const passwordHash = bcrypt.hashSync(password, 12);
     const result = db.prepare(`
       INSERT INTO auth_users (email, password_hash, role, full_name, is_active)
-      VALUES (?, ?, 'USER', ?, 1)
-    `).run(email.toLowerCase().trim(), passwordHash, full_name.trim());
+      VALUES (?, ?, ?, ?, 1)
+    `).run(email.toLowerCase().trim(), passwordHash, assignedRole, full_name.trim());
 
     const newUser = db.prepare('SELECT id, email, role, full_name FROM auth_users WHERE id = ?').get(result.lastInsertRowid);
     const token = signToken({
@@ -80,10 +81,10 @@ router.post('/register', (req, res) => {
       role: newUser.role,
       full_name: newUser.full_name,
       profile_id: null,
-      profile_type: null
+      profile_type: assignedRole
     });
 
-    logAudit('REGISTER', newUser.email, 'AUTH', newUser.id, `New user registered. Role: USER`, req.ip);
+    logAudit('REGISTER', newUser.email, 'AUTH', newUser.id, `New user registered. Role: ${assignedRole}`, req.ip);
 
     res.status(201).json({
       success: true,

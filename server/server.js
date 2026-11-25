@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -57,6 +58,9 @@ app.use('/api/cards', requireAuth, require('./routes/cards'));
 app.use('/api/settings', requireAuth, require('./routes/settings'));
 app.use('/api/audit-logs', requireAuth, requireAdmin, require('./routes/audit'));
 app.use('/api/applications', requireAuth, require('./routes/applications'));
+
+// Payments (Razorpay - Members only)
+app.use('/api/payments', requireAuth, require('./routes/payments'));
 
 // === SERVE CLIENT BUILD ===
 const clientDistPath = path.join(__dirname, '..', 'client', 'dist');

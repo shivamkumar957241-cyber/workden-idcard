@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db, generateStaffId, generateUserIdCode, generateSecureToken, logAudit } = require('../db');
+const { db, generateStaffId, generateUserIdCode, generateSecureToken, logAudit, createNotification } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 // POST /api/applications - Submit a new ID card application
@@ -127,7 +127,7 @@ router.get('/my', requireAuth, (req, res) => {
 // GET /api/applications - Admin: List all applications with filters
 router.get('/', requireAuth, requireAdmin, (req, res) => {
   try {
-    const { status, search, page = 1, limit = 50 } = req.query;
+    const { status, search, application_type, page = 1, limit = 50 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     let query = `
@@ -138,6 +138,10 @@ router.get('/', requireAuth, requireAdmin, (req, res) => {
     `;
     const params = [];
 
+    if (application_type && application_type !== 'ALL') {
+      query += ' AND a.application_type = ?';
+      params.push(application_type);
+    }
     if (status && status !== 'ALL') {
       query += ' AND a.status = ?';
       params.push(status);
@@ -246,16 +250,33 @@ router.post('/:id/approve', requireAuth, requireAdmin, (req, res) => {
     const token = generateSecureToken();
     db.prepare('INSERT INTO qr_verification_tokens (card_id, token, is_active) VALUES (?, ?, 1)').run(cardId, token);
 
-    // Update application record
+    // Update application record (payment_status differs for STAFF vs USER)
     db.prepare(`
       UPDATE id_applications 
       SET status = 'APPROVED', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP,
-          profile_id = ?, card_id = ?, updated_at = CURRENT_TIMESTAMP
+          profile_id = ?, card_id = ?, 
+          payment_status = ?,
+          download_unlocked = ?,
+          updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(req.user.email, profileId, cardId, appId);
+    `).run(
+      req.user.email, profileId, cardId,
+      app.application_type === 'STAFF' ? 'NOT_REQUIRED' : 'PENDING',
+      app.application_type === 'STAFF' ? 1 : 0,
+      appId
+    );
 
     // History
     db.prepare("INSERT INTO id_card_history (card_id, action, details, performed_by) VALUES (?, 'APPROVED', 'ID Card approved via application workflow', ?)").run(cardId, req.user.email);
+
+    // Notify user
+    const notifTitle = app.application_type === 'STAFF'
+      ? '✅ Staff ID Card Approved!'
+      : '✅ Member ID Card Application Approved!';
+    const notifMsg = app.application_type === 'STAFF'
+      ? `Your Staff ID Card (${entityCode}) has been approved. You can now download it from your dashboard.`
+      : `Your Member ID Card application has been approved! Please pay ₹99 to unlock your ID Card download.`;
+    createNotification(app.applicant_user_id, notifTitle, notifMsg, 'SUCCESS');
 
     logAudit('APPLICATION_APPROVE', req.user.email, 'APPLICATION', appId,
       `Application approved. ${profileType} ID: ${entityCode}`, req.ip);
@@ -279,7 +300,7 @@ router.post('/:id/reject', requireAuth, requireAdmin, (req, res) => {
     const appId = parseInt(req.params.id);
     const { rejection_reason } = req.body;
 
-    const app = db.prepare('SELECT id, status FROM id_applications WHERE id = ?').get(appId);
+    const app = db.prepare('SELECT id, status, applicant_user_id FROM id_applications WHERE id = ?').get(appId);
     if (!app) return res.status(404).json({ success: false, error: 'Application not found.' });
     if (app.status !== 'PENDING') return res.status(400).json({ success: false, error: 'Application is not in PENDING status.' });
 
@@ -289,6 +310,11 @@ router.post('/:id/reject', requireAuth, requireAdmin, (req, res) => {
           reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(rejection_reason || 'Does not meet requirements.', req.user.email, appId);
+
+    createNotification(app.applicant_user_id,
+      '❌ ID Card Application Rejected',
+      `Your ID Card application has been rejected. Reason: ${rejection_reason || 'Does not meet requirements.'}. You may re-apply after addressing the issue.`,
+      'ERROR');
 
     logAudit('APPLICATION_REJECT', req.user.email, 'APPLICATION', appId, `Application rejected: ${rejection_reason}`, req.ip);
 

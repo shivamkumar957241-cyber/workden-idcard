@@ -17,20 +17,29 @@ import QRManagementView from './QRManagementView';
 import AuditLogsView from './AuditLogsView';
 import ApplicationsView from './ApplicationsView';
 import UserAccountsView from './UserAccountsView';
+import PaymentsView from './PaymentsView';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
 
 const NAV_SECTIONS = [
-  { id: 'overview', label: 'Overview', icon: TrendingUp, group: null },
-  { id: 'staff-cards', label: 'Staff ID Cards', icon: Users, group: 'ID Management' },
-  { id: 'user-cards', label: 'User ID Cards', icon: CreditCard, group: 'ID Management' },
-  { id: 'all-issued', label: 'All Issued Cards', icon: Layers, group: 'ID Management' },
-  { id: 'pending-approvals', label: 'Pending ID Approvals', icon: Clock, group: 'Approvals', badge: 'pending' },
-  { id: 'user-accounts', label: 'Registered Accounts', icon: Shield, group: 'User Accounts' },
-  { id: 'qr-management', label: 'QR Verification', icon: QrCode, group: 'Security' },
-  { id: 'expired-cards', label: 'Expired Cards', icon: AlertOctagon, group: 'Security' },
-  { id: 'suspended-revoked', label: 'Revoked / Suspended', icon: Ban, group: 'Security' },
-  { id: 'audit-logs', label: 'Audit Logs', icon: ShieldCheck, group: 'Security' },
-  { id: 'design-settings', label: 'ID Card Settings', icon: Settings, group: 'Config' },
+  // 1. Dashboard
+  { id: 'overview', label: '1. Dashboard Overview', icon: TrendingUp, group: 'Main' },
+
+  // 2. Member Management & Workflows
+  { id: 'member-management', label: '2. Member Management', icon: Users, group: 'Member Portal' },
+  { id: 'member-applications', label: '4. Member ID Applications', icon: FileText, group: 'Member Portal', badge: 'member_pending' },
+  { id: 'member-payments', label: '6. Member ID Card Payments', icon: CreditCard, group: 'Member Portal' },
+  { id: 'payment-approvals', label: '7. Payment Approvals', icon: Clock, group: 'Member Portal', badge: 'payment_pending' },
+  { id: 'member-downloads', label: '8. Member Card Downloads', icon: Layers, group: 'Member Portal' },
+
+  // 3. Staff Management & Workflows
+  { id: 'staff-management', label: '3. Staff Management', icon: Shield, group: 'Staff Portal' },
+  { id: 'staff-applications', label: '5. Staff ID Applications', icon: FileText, group: 'Staff Portal', badge: 'staff_pending' },
+  { id: 'staff-downloads', label: '9. Staff Card Downloads', icon: Layers, group: 'Staff Portal' },
+
+  // Operations, Reports & Config
+  { id: 'reports-stats', label: '10. Reports & Statistics', icon: QrCode, group: 'Operations' },
+  { id: 'notifications-audit', label: '11. Notifications & Audit Logs', icon: ShieldCheck, group: 'Operations' },
+  { id: 'design-settings', label: '12. Settings', icon: Settings, group: 'Configuration' },
 ];
 
 export default function AdminDashboard({ user, onLogout }) {
@@ -43,7 +52,18 @@ export default function AdminDashboard({ user, onLogout }) {
   const [settings, setSettings] = useState(null);
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
-  const [counts, setCounts] = useState({ total_staff: 0, total_users: 0, total_issued: 0, pending: 0, expired: 0, revoked: 0, active: 0 });
+  const [counts, setCounts] = useState({
+    total_staff: 0,
+    total_users: 0,
+    total_issued: 0,
+    pending: 0,
+    member_pending: 0,
+    staff_pending: 0,
+    payment_pending: 0,
+    expired: 0,
+    revoked: 0,
+    active: 0
+  });
 
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
@@ -103,27 +123,42 @@ export default function AdminDashboard({ user, onLogout }) {
 
   const fetchAllCards = async () => {
     try {
-      const [cardsRes, appsRes] = await Promise.all([
+      const [cardsRes, appsRes, paymentsRes] = await Promise.all([
         authFetch('/api/cards/all'),
-        authFetch('/api/applications?status=PENDING').catch(() => null)
+        authFetch('/api/applications?status=PENDING').catch(() => null),
+        authFetch('/api/payments/all?status=SUBMITTED').catch(() => null)
       ]);
       const json = await cardsRes.json();
-      let pendingAppsCount = 0;
+      let pendingApps = [];
       if (appsRes && appsRes.ok) {
         const appsJson = await appsRes.json();
         if (appsJson.success) {
-          pendingAppsCount = (appsJson.data || []).length;
+          pendingApps = appsJson.data || [];
         }
       }
+      let paymentPendingCount = 0;
+      if (paymentsRes && paymentsRes.ok) {
+        const payJson = await paymentsRes.json();
+        if (payJson.success) {
+          paymentPendingCount = (payJson.data || []).length;
+        }
+      }
+
       if (json.success) {
         const all = json.data || [];
         setUnifiedCards(all);
         const pendingCardsCount = all.filter(c => c.status === 'PENDING').length;
+        const memberAppsCount = pendingApps.filter(a => a.application_type === 'USER').length;
+        const staffAppsCount = pendingApps.filter(a => a.application_type === 'STAFF').length;
+
         setCounts({
           total_staff: all.filter(c => c.profile_type === 'STAFF').length,
           total_users: all.filter(c => c.profile_type === 'USER').length,
           total_issued: all.length,
-          pending: pendingAppsCount + pendingCardsCount,
+          pending: pendingApps.length + pendingCardsCount,
+          member_pending: memberAppsCount,
+          staff_pending: staffAppsCount,
+          payment_pending: paymentPendingCount,
           expired: all.filter(c => c.status === 'EXPIRED').length,
           revoked: all.filter(c => c.status === 'SUSPENDED' || c.status === 'REVOKED').length,
           active: all.filter(c => c.status === 'ACTIVE').length,
@@ -220,63 +255,156 @@ export default function AdminDashboard({ user, onLogout }) {
 
   const renderSection = () => {
     switch (activeSection) {
-      case 'overview': return <OverviewSection counts={counts} onNavigate={setActiveSection} />;
-      case 'staff-cards':
-        return <StaffTable staffList={staffList} departments={departments} designations={designations}
-          loading={loading} pagination={staffPagination} filters={staffFilters}
-          onFilterChange={(k, v) => setStaffFilters(p => ({ ...p, [k]: v, page: 1 }))}
-          onOpenRegister={() => setIsStaffRegOpen(true)}
-          onPreviewCard={c => setPreviewCard({ ...c, profile_type: 'STAFF', entity_code: c.staff_id, mobile: c.mobile, phone: c.mobile })}
-          onApproveCard={id => handleApprove(id, 'STAFF')}
-          onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
-          onExportCsv={() => window.open('/api/cards/export')}
-          onDeleteCard={handleDeleteCard} />;
-      case 'user-cards':
-        return <UserTable userList={userList} loading={loading} pagination={userPagination} filters={userFilters}
-          onFilterChange={(k, v) => setUserFilters(p => ({ ...p, [k]: v, page: 1 }))}
-          onOpenRegister={() => setIsUserRegOpen(true)}
-          onPreviewCard={c => setPreviewCard({ ...c, profile_type: 'USER', entity_code: c.user_id_code, mobile: c.mobile, phone: c.mobile })}
-          onApproveCard={id => handleApprove(id, 'USER')}
-          onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
-          onExportCsv={() => window.open('/api/cards/export')}
-          onDeleteCard={handleDeleteCard} />;
-      case 'all-issued':
-        return <UnifiedCardsTable title="All Issued ID Cards" subtitle="Complete directory of all identity cards" icon={Layers}
-          cards={unifiedCards} onPreviewCard={c => setPreviewCard({ ...c, mobile: c.mobile, phone: c.mobile })}
-          onApproveCard={(id, t) => handleApprove(id, t)}
-          onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
-          onExportCsv={() => window.open('/api/cards/export')}
-          onDeleteCard={handleDeleteCard} />;
-      case 'applications':
-      case 'pending-approvals':
-        return <ApplicationsView initialStatus="PENDING" onApprovalSuccess={() => { fetchAllCards(); fetchStaff(); fetchUsers(); fetchCounts(); showToast('Application processed successfully!'); }} />;
+      case 'overview':
+        return <OverviewSection counts={counts} onNavigate={setActiveSection} />;
+
+      // 2. Member Management
+      case 'member-management':
       case 'user-accounts':
         return <UserAccountsView onPreviewCard={c => setPreviewCard(c)} />;
+
+      // 4. Member ID Card Applications
+      case 'member-applications':
+        return (
+          <ApplicationsView
+            filterType="USER"
+            initialStatus="PENDING"
+            onApprovalSuccess={() => { fetchAllCards(); fetchUsers(); showToast('Member application processed!'); }}
+          />
+        );
+
+      // 6. Member ID Card Payments
+      case 'member-payments':
+        return (
+          <PaymentsView
+            initialStatus="ALL"
+            onPaymentApproved={() => { fetchAllCards(); showToast('Payment verified & download unlocked!'); }}
+          />
+        );
+
+      // 7. Payment Confirmation Approvals
+      case 'payment-approvals':
+        return (
+          <PaymentsView
+            initialStatus="SUBMITTED"
+            onPaymentApproved={() => { fetchAllCards(); showToast('Payment verified & download unlocked!'); }}
+          />
+        );
+
+      // 8. Member ID Card Downloads
+      case 'member-downloads':
+      case 'user-cards':
+        return (
+          <UnifiedCardsTable
+            title="Member ID Card Downloads"
+            subtitle="Approved and active member cards"
+            icon={Layers}
+            cards={unifiedCards.filter(c => c.profile_type === 'USER')}
+            onPreviewCard={c => setPreviewCard({ ...c, mobile: c.mobile, phone: c.mobile })}
+            onApproveCard={(id, t) => handleApprove(id, t)}
+            onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
+            onExportCsv={() => window.open('/api/cards/export')}
+            onDeleteCard={handleDeleteCard}
+          />
+        );
+
+      // 3. Staff Management
+      case 'staff-management':
+      case 'staff-cards':
+        return (
+          <StaffTable
+            staffList={staffList}
+            departments={departments}
+            designations={designations}
+            loading={loading}
+            pagination={staffPagination}
+            filters={staffFilters}
+            onFilterChange={(k, v) => setStaffFilters(p => ({ ...p, [k]: v, page: 1 }))}
+            onOpenRegister={() => setIsStaffRegOpen(true)}
+            onPreviewCard={c => setPreviewCard({ ...c, profile_type: 'STAFF', entity_code: c.staff_id, mobile: c.mobile, phone: c.mobile })}
+            onApproveCard={id => handleApprove(id, 'STAFF')}
+            onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
+            onExportCsv={() => window.open('/api/cards/export')}
+            onDeleteCard={handleDeleteCard}
+          />
+        );
+
+      // 5. Staff ID Card Applications
+      case 'staff-applications':
+        return (
+          <ApplicationsView
+            filterType="STAFF"
+            initialStatus="PENDING"
+            onApprovalSuccess={() => { fetchAllCards(); fetchStaff(); showToast('Staff application processed!'); }}
+          />
+        );
+
+      // 9. Staff ID Card Downloads
+      case 'staff-downloads':
+        return (
+          <UnifiedCardsTable
+            title="Staff ID Card Downloads"
+            subtitle="Approved and active staff cards (Free direct download)"
+            icon={Layers}
+            cards={unifiedCards.filter(c => c.profile_type === 'STAFF')}
+            onPreviewCard={c => setPreviewCard({ ...c, mobile: c.mobile, phone: c.mobile })}
+            onApproveCard={(id, t) => handleApprove(id, t)}
+            onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
+            onExportCsv={() => window.open('/api/cards/export')}
+            onDeleteCard={handleDeleteCard}
+          />
+        );
+
+      // 10. Reports & Statistics
+      case 'reports-stats':
       case 'qr-management':
         return <QRManagementView />;
-      case 'expired-cards':
-        return <UnifiedCardsTable title="Expired ID Cards" subtitle="Cards past their validity date" icon={AlertOctagon}
-          cards={unifiedCards.filter(c => c.status === 'EXPIRED')}
-          onPreviewCard={c => setPreviewCard(c)}
-          onApproveCard={(id, t) => handleApprove(id, t)}
-          onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'RENEW', targetStatus: 'ACTIVE' })}
-          onExportCsv={() => window.open('/api/cards/export')}
-          onDeleteCard={handleDeleteCard} />;
-      case 'suspended-revoked':
-        return <UnifiedCardsTable title="Revoked / Suspended Cards" subtitle="Cards that are disabled or permanently revoked" icon={Ban}
-          cards={unifiedCards.filter(c => c.status === 'SUSPENDED' || c.status === 'REVOKED')}
-          onPreviewCard={c => setPreviewCard(c)}
-          onApproveCard={(id, t) => handleApprove(id, t)}
-          onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'ACTIVE' })}
-          onExportCsv={() => window.open('/api/cards/export')}
-          onDeleteCard={handleDeleteCard} />;
+
+      // 11. Notifications & Audit Logs
+      case 'notifications-audit':
+      case 'audit-logs':
+        return <AuditLogsView />;
+
+      // 12. Settings
       case 'design-settings':
-        return <SettingsView settings={settings} departments={departments} designations={designations}
-          onUpdateSettings={handleUpdateSettings} onAddDepartment={handleAddDepartment}
-          onDeleteDepartment={handleDeleteDepartment} onAddDesignation={handleAddDesignation}
-          onDeleteDesignation={handleDeleteDesignation} />;
-      case 'audit-logs': return <AuditLogsView />;
-      default: return null;
+        return (
+          <SettingsView
+            settings={settings}
+            departments={departments}
+            designations={designations}
+            onUpdateSettings={handleUpdateSettings}
+            onAddDepartment={handleAddDepartment}
+            onDeleteDepartment={handleDeleteDepartment}
+            onAddDesignation={handleAddDesignation}
+            onDeleteDesignation={handleDeleteDesignation}
+          />
+        );
+
+      // Fallback
+      case 'all-issued':
+        return (
+          <UnifiedCardsTable
+            title="All Issued ID Cards"
+            subtitle="Complete directory of all identity cards"
+            icon={Layers}
+            cards={unifiedCards}
+            onPreviewCard={c => setPreviewCard({ ...c, mobile: c.mobile, phone: c.mobile })}
+            onApproveCard={(id, t) => handleApprove(id, t)}
+            onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
+            onExportCsv={() => window.open('/api/cards/export')}
+            onDeleteCard={handleDeleteCard}
+          />
+        );
+      case 'pending-approvals':
+      case 'applications':
+        return (
+          <ApplicationsView
+            initialStatus="PENDING"
+            onApprovalSuccess={() => { fetchAllCards(); fetchStaff(); fetchUsers(); showToast('Application processed!'); }}
+          />
+        );
+      default:
+        return <OverviewSection counts={counts} onNavigate={setActiveSection} />;
     }
   };
 
@@ -309,7 +437,11 @@ export default function AdminDashboard({ user, onLogout }) {
               <div key={group} className="mb-4">
                 {group && <p className="text-[#666] text-[10px] font-bold uppercase tracking-widest px-3 mb-2">{group}</p>}
                 {items.map(({ id, label, icon: Icon, badge }) => {
-                  const badgeCount = badge === 'pending' ? counts.pending : 0;
+                  const badgeCount =
+                    badge === 'member_pending' ? counts.member_pending :
+                    badge === 'staff_pending' ? counts.staff_pending :
+                    badge === 'payment_pending' ? counts.payment_pending :
+                    badge === 'pending' ? counts.pending : 0;
                   const isActive = activeSection === id;
                   return (
                     <button
@@ -456,13 +588,13 @@ function OverviewSection({ counts, onNavigate }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#171717] border border-[#353535] rounded-2xl p-5">
-          <h3 className="text-white font-bold text-sm mb-3">Quick Actions</h3>
+          <h3 className="text-white font-bold text-sm mb-3">Quick Actions & Workflows</h3>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'New Staff ID', section: 'staff-cards', color: 'text-white bg-[#222222] border-[#353535] hover:border-[#F5C542] hover:text-[#F5C542]' },
-              { label: 'New User ID', section: 'user-cards', color: 'text-white bg-[#222222] border-[#353535] hover:border-[#F5C542] hover:text-[#F5C542]' },
-              { label: 'View Applications', section: 'applications', color: 'text-[#F5C542] bg-[#F5C542]/10 border-[#F5C542]/30 hover:bg-[#F5C542]/20' },
-              { label: 'QR Management', section: 'qr-management', color: 'text-white bg-[#222222] border-[#353535] hover:border-[#F5C542] hover:text-[#F5C542]' },
+              { label: 'Member ID Applications', section: 'member-applications', color: 'text-[#F5C542] bg-[#F5C542]/10 border-[#F5C542]/30 hover:bg-[#F5C542]/20' },
+              { label: 'Staff ID Applications', section: 'staff-applications', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' },
+              { label: 'Payment Approvals (₹99)', section: 'payment-approvals', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20' },
+              { label: 'QR Management', section: 'reports-stats', color: 'text-white bg-[#222222] border-[#353535] hover:border-[#F5C542] hover:text-[#F5C542]' },
             ].map(({ label, section, color }) => (
               <button key={label} onClick={() => onNavigate(section)}
                 className={`px-3 py-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${color}`}>

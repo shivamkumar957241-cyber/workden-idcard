@@ -29,7 +29,8 @@ git fetch origin main
 git checkout -B main origin/main
 git reset --hard origin/main
 
-echo [4/5] Verifying and preserving local database...
+echo [4/5] Installing dependencies and verifying database...
+call npm install --omit=dev >nul 2>&1
 if not exist "server\workden_idcard.db" (
   if exist "!BKDIR!\workden_idcard.db" (
     copy /Y "!BKDIR!\workden_idcard.db*" "server\" >nul 2>&1

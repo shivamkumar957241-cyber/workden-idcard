@@ -219,9 +219,63 @@ function initDatabase() {
       reviewed_at DATETIME,
       profile_id INTEGER,
       card_id INTEGER,
+      payment_status TEXT DEFAULT 'NOT_REQUIRED' CHECK(payment_status IN ('NOT_REQUIRED', 'PENDING', 'PAID', 'VERIFIED', 'REJECTED')),
+      download_unlocked INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(applicant_user_id) REFERENCES auth_users(id)
+    );
+
+    -- Razorpay Payment Orders
+    CREATE TABLE IF NOT EXISTS payment_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      application_id INTEGER NOT NULL,
+      applicant_user_id INTEGER NOT NULL,
+      razorpay_order_id TEXT UNIQUE NOT NULL,
+      amount INTEGER NOT NULL DEFAULT 9900,
+      currency TEXT DEFAULT 'INR',
+      status TEXT NOT NULL DEFAULT 'CREATED' CHECK(status IN ('CREATED','PAID','FAILED','CANCELLED')),
+      razorpay_payment_id TEXT,
+      razorpay_signature TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(application_id) REFERENCES id_applications(id),
+      FOREIGN KEY(applicant_user_id) REFERENCES auth_users(id)
+    );
+
+    -- Payment Confirmations (submitted by member after payment)
+    CREATE TABLE IF NOT EXISTS payment_confirmations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      application_id INTEGER NOT NULL,
+      applicant_user_id INTEGER NOT NULL,
+      payment_order_id INTEGER NOT NULL,
+      member_name TEXT NOT NULL,
+      member_id TEXT,
+      razorpay_payment_id TEXT NOT NULL,
+      razorpay_order_id TEXT NOT NULL,
+      amount INTEGER NOT NULL DEFAULT 9900,
+      payment_date DATETIME NOT NULL,
+      status TEXT NOT NULL DEFAULT 'SUBMITTED' CHECK(status IN ('SUBMITTED','APPROVED','REJECTED')),
+      admin_remarks TEXT,
+      reviewed_by TEXT,
+      reviewed_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(application_id) REFERENCES id_applications(id),
+      FOREIGN KEY(applicant_user_id) REFERENCES auth_users(id),
+      FOREIGN KEY(payment_order_id) REFERENCES payment_orders(id)
+    );
+
+    -- Notifications
+    CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      type TEXT DEFAULT 'INFO' CHECK(type IN ('INFO','SUCCESS','WARNING','ERROR')),
+      is_read INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(user_id) REFERENCES auth_users(id) ON DELETE CASCADE
     );
   `);
 
@@ -235,11 +289,62 @@ function initDatabase() {
     });
 
     const appCols = db.prepare("PRAGMA table_info(id_applications)").all().map(c => c.name);
-    ['city', 'qualification', 'aadhar_number', 'aadhar_front', 'aadhar_back'].forEach(col => {
+    ['city', 'qualification', 'aadhar_number', 'aadhar_front', 'aadhar_back',
+     'payment_status', 'download_unlocked'].forEach(col => {
       if (!appCols.includes(col)) {
-        db.exec(`ALTER TABLE id_applications ADD COLUMN ${col} TEXT`);
+        if (col === 'payment_status') {
+          db.exec(`ALTER TABLE id_applications ADD COLUMN payment_status TEXT DEFAULT 'NOT_REQUIRED'`);
+        } else if (col === 'download_unlocked') {
+          db.exec(`ALTER TABLE id_applications ADD COLUMN download_unlocked INTEGER DEFAULT 0`);
+        } else {
+          db.exec(`ALTER TABLE id_applications ADD COLUMN ${col} TEXT`);
+        }
       }
     });
+
+    // Ensure payment_orders table exists (safe re-create)
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS payment_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        application_id INTEGER NOT NULL,
+        applicant_user_id INTEGER NOT NULL,
+        razorpay_order_id TEXT UNIQUE NOT NULL,
+        amount INTEGER NOT NULL DEFAULT 9900,
+        currency TEXT DEFAULT 'INR',
+        status TEXT NOT NULL DEFAULT 'CREATED',
+        razorpay_payment_id TEXT,
+        razorpay_signature TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS payment_confirmations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        application_id INTEGER NOT NULL,
+        applicant_user_id INTEGER NOT NULL,
+        payment_order_id INTEGER NOT NULL,
+        member_name TEXT NOT NULL,
+        member_id TEXT,
+        razorpay_payment_id TEXT NOT NULL,
+        razorpay_order_id TEXT NOT NULL,
+        amount INTEGER NOT NULL DEFAULT 9900,
+        payment_date DATETIME NOT NULL,
+        status TEXT NOT NULL DEFAULT 'SUBMITTED',
+        admin_remarks TEXT,
+        reviewed_by TEXT,
+        reviewed_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        type TEXT DEFAULT 'INFO',
+        is_read INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
   } catch (migErr) {
     console.error('Migration error:', migErr);
   }
@@ -409,6 +514,15 @@ function updateExpiredCards() {
   }
 }
 
+// Create notification for a user
+function createNotification(userId, title, message, type = 'INFO') {
+  try {
+    db.prepare('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)').run(userId, title, message, type);
+  } catch (err) {
+    console.error('Failed to create notification:', err);
+  }
+}
+
 try {
   db = openDatabaseConnection();
   initDatabase();
@@ -447,5 +561,6 @@ module.exports = {
   generateSecureToken,
   logAudit,
   updateExpiredCards,
-  checkpointAndClose
+  checkpointAndClose,
+  createNotification
 };
