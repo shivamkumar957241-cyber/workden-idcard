@@ -262,7 +262,7 @@ function buildIdCardGeneratedHtml({
                 <tr>
                   <td align="center">
                     <a href="${downloadUrl}" target="_blank" style="display:block;text-decoration:none;">
-                      <img src="${previewImgUrl}" alt="WorkDen ID Card Preview" width="440" style="width:100%;max-width:440px;height:auto;border-radius:18px;display:block;margin:0 auto;border:1px solid #353535;" />
+                      <img src="${previewImgUrl}" alt="WorkDen ID Card Preview" width="420" height="264" style="width:100%;max-width:420px;height:auto;border-radius:18px;display:block;margin:0 auto;border:1px solid #353535;" />
                     </a>
                   </td>
                 </tr>

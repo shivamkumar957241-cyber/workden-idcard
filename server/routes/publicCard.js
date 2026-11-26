@@ -79,9 +79,10 @@ router.get('/:token/preview.png', async (req, res) => {
     });
 
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Cache-Control', 'public, max-age=300');
     res.send(pngBuffer);
   } catch (err) {
+    console.error('❌ Preview PNG error:', err.message);
     res.status(404).send('Preview unavailable');
   }
 });
