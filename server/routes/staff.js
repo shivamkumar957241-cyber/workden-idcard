@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, generateStaffId, generateSecureToken, logAudit, updateExpiredCards, purgeApplicationsAndCards } = require('../db');
+const { sendIdCardGeneratedEmail } = require('../utils/email');
 
 // GET /api/staff - List staff profiles with search & filters
 router.get('/', (req, res) => {
@@ -290,6 +291,18 @@ router.post('/', (req, res) => {
 
     const result = insertTransaction();
 
+    if (result.cardStatus === 'ACTIVE' && email) {
+      sendIdCardGeneratedEmail({
+        toEmail: email,
+        fullName: full_name,
+        entityCode: result.staffId,
+        profileType: 'STAFF',
+        designation,
+        department,
+        isUnlocked: false
+      }).catch(() => {});
+    }
+
     res.status(201).json({
       success: true,
       message: `Staff ID ${result.staffId} generated successfully (${result.cardStatus})`,
@@ -342,6 +355,18 @@ router.post('/:id/approve', (req, res) => {
     });
 
     approveTx();
+
+    if (staff.email) {
+      sendIdCardGeneratedEmail({
+        toEmail: staff.email,
+        fullName: staff.full_name,
+        entityCode: staff.staff_id,
+        profileType: 'STAFF',
+        designation: staff.designation,
+        department: staff.department,
+        isUnlocked: false
+      }).catch(() => {});
+    }
 
     res.json({
       success: true,

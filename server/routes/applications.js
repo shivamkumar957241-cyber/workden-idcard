@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { db, generateStaffId, generateUserIdCode, generateSecureToken, logAudit, createNotification, purgeApplicationsAndCards } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { sendIdCardGeneratedEmail } = require('../utils/email');
 
 // POST /api/applications - Submit a new ID card application
 router.post('/', requireAuth, (req, res) => {
@@ -280,6 +281,18 @@ router.post('/:id/approve', requireAuth, requireAdmin, (req, res) => {
 
     logAudit('APPLICATION_APPROVE', req.user.email, 'APPLICATION', appId,
       `Application approved. ${profileType} ID: ${entityCode}`, req.ip);
+
+    // Send ID Card Generated email via Brevo (non-blocking)
+    sendIdCardGeneratedEmail({
+      toEmail: app.email,
+      fullName: app.full_name,
+      entityCode,
+      profileType,
+      designation: app.designation,
+      department: app.department,
+      currentPlan: app.current_plan,
+      isUnlocked: !requiresPayment
+    }).catch(() => {});
 
     res.json({
       success: true,

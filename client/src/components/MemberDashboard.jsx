@@ -21,7 +21,8 @@ export const PRICING_PLANS = [
 ];
 
 export default function MemberDashboard({ user, onLogout }) {
-  const [activeTab, setActiveTab] = useState('overview'); // overview | apply | payment | download | notifications | profile
+  const initialTab = new URLSearchParams(window.location.search).get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(initialTab); // overview | apply | payment | download | notifications | profile
   const [application, setApplication] = useState(null);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);

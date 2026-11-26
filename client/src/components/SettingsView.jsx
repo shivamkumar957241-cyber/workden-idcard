@@ -39,7 +39,9 @@ export default function SettingsView({
     require_staff_payment: settings?.require_staff_payment !== 0,
     auto_unlock_on_payment: settings?.auto_unlock_on_payment !== 0,
     razorpay_key_id: settings?.razorpay_key_id || 'rzp_live_U4VD9FTceH5P0x',
-    support_phone: settings?.support_phone || '+91 92627 25686'
+    support_phone: settings?.support_phone || '+91 92627 25686',
+    brevo_sender_email: settings?.brevo_sender_email || 'idcard@workden.online',
+    brevo_api_key: settings?.brevo_api_key || ''
   });
 
   useEffect(() => {
@@ -63,7 +65,9 @@ export default function SettingsView({
         require_staff_payment: settings.require_staff_payment !== 0,
         auto_unlock_on_payment: settings.auto_unlock_on_payment !== 0,
         razorpay_key_id: settings.razorpay_key_id || 'rzp_live_U4VD9FTceH5P0x',
-        support_phone: settings.support_phone || '+91 92627 25686'
+        support_phone: settings.support_phone || '+91 92627 25686',
+        brevo_sender_email: settings.brevo_sender_email || 'idcard@workden.online',
+        brevo_api_key: settings.brevo_api_key || prev.brevo_api_key
       }));
     }
   }, [settings]);
@@ -284,6 +288,34 @@ export default function SettingsView({
                 onChange={handleChange}
                 placeholder="+91 92627 25686"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-white focus:outline-none focus:border-[#F5C542] text-xs transition-all"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-[#B5B5B5] mb-1.5 uppercase tracking-wider text-[11px]">
+                Brevo Sender Email (From Address)
+              </label>
+              <input
+                type="email"
+                name="brevo_sender_email"
+                value={formData.brevo_sender_email}
+                onChange={handleChange}
+                placeholder="idcard@workden.online"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-white focus:outline-none focus:border-[#F5C542] text-xs transition-all"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block font-semibold text-[#B5B5B5] mb-1.5 uppercase tracking-wider text-[11px]">
+                Brevo API Key (Leave blank to use .env)
+              </label>
+              <input
+                type="password"
+                name="brevo_api_key"
+                value={formData.brevo_api_key}
+                onChange={handleChange}
+                placeholder="xkeysib-..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-white font-mono focus:outline-none focus:border-[#F5C542] text-xs transition-all"
               />
             </div>
           </div>

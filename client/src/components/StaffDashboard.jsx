@@ -13,7 +13,8 @@ import IdCardPreviewModal from './IdCardPreviewModal';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
 
 export default function StaffDashboard({ user, onLogout }) {
-  const [activeTab, setActiveTab] = useState('overview'); // overview | apply | card | notifications | profile
+  const initialTab = new URLSearchParams(window.location.search).get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(initialTab); // overview | apply | card | notifications | profile
   const [application, setApplication] = useState(null);
   const [settings, setSettings] = useState(null);
   const [departments, setDepartments] = useState([]);

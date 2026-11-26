@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, generateUserIdCode, generateSecureToken, logAudit, updateExpiredCards, purgeApplicationsAndCards } = require('../db');
+const { sendIdCardGeneratedEmail } = require('../utils/email');
 
 // GET /api/users - List all User ID profiles
 router.get('/', (req, res) => {
@@ -283,6 +284,17 @@ router.post('/', (req, res) => {
 
     const result = insertTx();
 
+    if (result.cardStatus === 'ACTIVE' && email) {
+      sendIdCardGeneratedEmail({
+        toEmail: email,
+        fullName: full_name,
+        entityCode: result.userIdCode,
+        profileType: 'USER',
+        currentPlan: current_plan,
+        isUnlocked: false
+      }).catch(() => {});
+    }
+
     res.status(201).json({
       success: true,
       message: `User ID Card ${result.userIdCode} created successfully (${result.cardStatus})`,
@@ -330,6 +342,17 @@ router.post('/:id/approve', (req, res) => {
     });
 
     approveTx();
+
+    if (user.email) {
+      sendIdCardGeneratedEmail({
+        toEmail: user.email,
+        fullName: user.full_name,
+        entityCode: user.user_id_code,
+        profileType: 'USER',
+        currentPlan: user.current_plan,
+        isUnlocked: false
+      }).catch(() => {});
+    }
 
     res.json({
       success: true,

@@ -353,6 +353,8 @@ function initDatabase() {
     if (!settingsCols.includes('auto_unlock_on_payment')) db.exec("ALTER TABLE id_card_settings ADD COLUMN auto_unlock_on_payment INTEGER DEFAULT 1;");
     if (!settingsCols.includes('razorpay_key_id')) db.exec("ALTER TABLE id_card_settings ADD COLUMN razorpay_key_id TEXT DEFAULT 'rzp_live_U4VD9FTceH5P0x';");
     if (!settingsCols.includes('support_phone')) db.exec("ALTER TABLE id_card_settings ADD COLUMN support_phone TEXT DEFAULT '+91 92627 25686';");
+    if (!settingsCols.includes('brevo_api_key')) db.exec("ALTER TABLE id_card_settings ADD COLUMN brevo_api_key TEXT DEFAULT '';");
+    if (!settingsCols.includes('brevo_sender_email')) db.exec("ALTER TABLE id_card_settings ADD COLUMN brevo_sender_email TEXT DEFAULT 'idcard@workden.online';");
   } catch (migErr) {
     console.error('Migration error:', migErr);
   }

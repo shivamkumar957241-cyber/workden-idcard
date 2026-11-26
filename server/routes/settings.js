@@ -32,7 +32,8 @@ router.put('/', (req, res) => {
       primary_color, secondary_color, accent_color,
       card_usage_rules, lost_card_instructions, qr_position,
       member_fee, staff_fee, require_member_payment, require_staff_payment,
-      auto_unlock_on_payment, razorpay_key_id, support_phone
+      auto_unlock_on_payment, razorpay_key_id, support_phone,
+      brevo_api_key, brevo_sender_email
     } = req.body;
 
     db.prepare(`
@@ -59,6 +60,8 @@ router.put('/', (req, res) => {
         auto_unlock_on_payment = COALESCE(?, auto_unlock_on_payment),
         razorpay_key_id = COALESCE(?, razorpay_key_id),
         support_phone = COALESCE(?, support_phone),
+        brevo_api_key = COALESCE(?, brevo_api_key),
+        brevo_sender_email = COALESCE(?, brevo_sender_email),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(
@@ -72,7 +75,9 @@ router.put('/', (req, res) => {
       require_staff_payment !== undefined ? (require_staff_payment ? 1 : 0) : null,
       auto_unlock_on_payment !== undefined ? (auto_unlock_on_payment ? 1 : 0) : null,
       razorpay_key_id ?? null,
-      support_phone ?? null
+      support_phone ?? null,
+      brevo_api_key ?? null,
+      brevo_sender_email ?? null
     );
 
     logAudit('UPDATE_SETTINGS', 'Admin', 'SETTINGS', '1', 'Portal, Payment, and ID Card Settings updated.');
