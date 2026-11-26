@@ -8,6 +8,7 @@ import AdminDashboard from './components/AdminDashboard';
 import MemberDashboard from './components/MemberDashboard';
 import StaffDashboard from './components/StaffDashboard';
 import PublicVerifyPage from './components/PublicVerifyPage';
+import PublicCardAccessPage from './components/PublicCardAccessPage';
 
 export default function App() {
   const [user, setUser] = useState(getUser());
@@ -33,8 +34,9 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Public QR Verification Page */}
+        {/* Public QR Verification & Direct Card Access Pages */}
         <Route path="/verify/:token" element={<PublicVerifyPage />} />
+        <Route path="/card-access/:token" element={<PublicCardAccessPage />} />
 
         {/* Landing Page (Public Home) */}
         <Route

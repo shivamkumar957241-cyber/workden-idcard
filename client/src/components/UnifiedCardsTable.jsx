@@ -6,7 +6,8 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   AlertCircle,
-  Trash2
+  Trash2,
+  Mail
 } from 'lucide-react';
 import { formatDateIST } from '../utils/date';
 
@@ -20,7 +21,8 @@ export default function UnifiedCardsTable({
   onApproveCard,
   onOpenStatusModal,
   onExportCsv,
-  onDeleteCard
+  onDeleteCard,
+  onResendEmail
 }) {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
@@ -213,6 +215,16 @@ export default function UnifiedCardsTable({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+
+                          {onResendEmail && c.status === 'ACTIVE' && (
+                            <button
+                              onClick={() => onResendEmail(c)}
+                              className="p-1.5 rounded-lg text-[#F5C542] hover:bg-[#F5C542]/15 transition cursor-pointer"
+                              title="Resend ID Card Email"
+                            >
+                              <Mail className="w-4 h-4" />
+                            </button>
+                          )}
 
                           {c.status === 'PENDING' && (
                             <button

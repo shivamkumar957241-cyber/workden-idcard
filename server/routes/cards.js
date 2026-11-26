@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, updateExpiredCards, logAudit, purgeApplicationsAndCards } = require('../db');
+const { sendIdCardGeneratedEmail } = require('../utils/email');
 
 // Helper to fetch unified card records
 function getUnifiedCards(whereClause = '1=1', params = []) {
@@ -290,6 +291,71 @@ router.delete('/:id', (req, res) => {
     res.json({ success: true, message: 'Record permanently deleted from all database tables.' });
   } catch (err) {
     console.error('Error deleting card:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/cards/:id/resend-email - Admin resends ID Card email for any generated Member or Staff card
+router.post('/:id/resend-email', async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    let card = db.prepare('SELECT * FROM id_card_records WHERE id = ? OR entity_code = ?').get(targetId, targetId);
+    if (!card) {
+      // Fallback: check if targetId is a staff_profiles.id or user_id_profiles.id or application.id
+      const appById = db.prepare('SELECT card_id FROM id_applications WHERE id = ?').get(targetId);
+      if (appById?.card_id) {
+        card = db.prepare('SELECT * FROM id_card_records WHERE id = ?').get(appById.card_id);
+      }
+      if (!card) {
+        card = db.prepare("SELECT * FROM id_card_records WHERE (profile_type = 'STAFF' OR profile_type = 'USER') AND profile_id = ?").get(targetId);
+      }
+    }
+
+    if (!card) {
+      return res.status(404).json({ success: false, error: 'Generated ID card not found.' });
+    }
+
+    let profile = null;
+    if (card.profile_type === 'STAFF') {
+      profile = db.prepare('SELECT * FROM staff_profiles WHERE id = ?').get(card.profile_id);
+    } else {
+      profile = db.prepare('SELECT * FROM user_id_profiles WHERE id = ?').get(card.profile_id);
+    }
+
+    const app = db.prepare('SELECT * FROM id_applications WHERE card_id = ? ORDER BY id DESC LIMIT 1').get(card.id);
+    const toEmail = profile?.email || app?.email;
+    const fullName = profile?.full_name || app?.full_name || 'WorkDen User';
+
+    if (!toEmail) {
+      return res.status(400).json({ success: false, error: 'No registered email found for this card.' });
+    }
+
+    const s = db.prepare('SELECT require_member_payment, require_staff_payment FROM id_card_settings WHERE id = 1').get() || {};
+    const isStaff = card.profile_type === 'STAFF';
+    const requiresPay = isStaff ? (s.require_staff_payment !== 0) : (s.require_member_payment !== 0);
+    const isUnlocked = app ? (app.download_unlocked === 1 || !requiresPay) : !requiresPay;
+
+    const emailRes = await sendIdCardGeneratedEmail({
+      toEmail,
+      fullName,
+      entityCode: card.entity_code,
+      profileType: card.profile_type,
+      designation: profile?.designation || app?.designation || '',
+      department: profile?.department || app?.department || '',
+      currentPlan: profile?.current_plan || app?.current_plan || '',
+      mobile: profile?.mobile || app?.mobile || '',
+      photoUrl: profile?.photo_url || app?.photo_url || '',
+      expiryDate: card.expiry_date || '',
+      isUnlocked
+    });
+
+    if (emailRes.success) {
+      res.json({ success: true, message: `ID Card email resent to ${toEmail}!` });
+    } else {
+      res.status(400).json({ success: false, error: emailRes.error || 'Failed to resend email.' });
+    }
+  } catch (err) {
+    console.error('Resend email error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

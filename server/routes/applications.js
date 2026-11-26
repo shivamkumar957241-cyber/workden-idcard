@@ -291,6 +291,9 @@ router.post('/:id/approve', requireAuth, requireAdmin, async (req, res) => {
       designation: app.designation,
       department: app.department,
       currentPlan: app.current_plan,
+      mobile: app.mobile,
+      photoUrl: app.photo_url,
+      expiryDate: expiryDateFinal,
       isUnlocked: !requiresPayment
     }).catch(e => ({ success: false, error: e.message }));
 

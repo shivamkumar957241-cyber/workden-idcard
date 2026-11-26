@@ -118,6 +118,24 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
     }
   };
 
+  const handleResendEmail = async (app) => {
+    const idOrCode = app.card_id || app.id;
+    setProcessingId(app.id);
+    try {
+      const res = await authFetch(`/api/cards/${idOrCode}/resend-email`, { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        showMsg(json.message || `Email resent to ${app.email}!`);
+      } else {
+        showMsg(json.error || 'Failed to resend email', 'error');
+      }
+    } catch {
+      showMsg('Server error while resending email', 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const pending = applications.filter(a => a.status === 'PENDING');
   const filtered = statusFilter === 'ALL' ? applications : applications.filter(a => a.status === statusFilter);
 
@@ -276,6 +294,17 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
                           <X className="w-3.5 h-3.5" /> Reject
                         </button>
                       </>
+                    )}
+                    {app.status === 'APPROVED' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleResendEmail(app); }}
+                        disabled={processingId === app.id}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F5C542]/15 text-[#F5C542] border border-[#F5C542]/30 hover:bg-[#F5C542]/25 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer select-none"
+                        title="Resend ID Card Email"
+                      >
+                        {processingId === app.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                        Resend Email
+                      </button>
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteApp(app.id, app.full_name); }}

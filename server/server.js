@@ -60,8 +60,9 @@ setInterval(() => {
 // Auth routes (login, register) - no auth required
 app.use('/api/auth', require('./routes/auth'));
 
-// QR Verification - fully public (accessible by anyone scanning a QR code)
+// QR Verification & Direct Card Access - fully public
 app.use('/api/verify', require('./routes/verify'));
+app.use('/api/public-card', require('./routes/publicCard'));
 // Also expose at /verify/:token for the public URL pattern (redirect to frontend)
 app.get('/verify/:token', (req, res) => {
   const clientDistPath = path.join(__dirname, '..', 'client', 'dist');

@@ -16,7 +16,8 @@ import {
   Building2,
   MapPin,
   CreditCard,
-  UserCheck
+  UserCheck,
+  Mail
 } from 'lucide-react';
 import { formatDateIST } from '../utils/date';
 
@@ -33,7 +34,8 @@ export default function StaffTable({
   onApproveCard,
   onOpenStatusModal,
   onExportCsv,
-  onDeleteCard
+  onDeleteCard,
+  onResendEmail
 }) {
   const [selectedStaffIds, setSelectedStaffIds] = useState([]);
   const [selectedDetailStaff, setSelectedDetailStaff] = useState(null);
@@ -269,6 +271,15 @@ export default function StaffTable({
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+                        {onResendEmail && s.card_status === 'ACTIVE' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onResendEmail(s); }}
+                            className="p-1.5 rounded-lg text-[#F5C542] hover:bg-[#F5C542]/15 transition cursor-pointer"
+                            title="Resend Staff ID Card Email"
+                          >
+                            <Mail className="w-4 h-4" />
+                          </button>
+                        )}
                         {s.card_status === 'PENDING' && (
                           <button
                             onClick={() => onApproveCard(s.id)}

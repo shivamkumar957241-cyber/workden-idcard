@@ -251,6 +251,21 @@ export default function AdminDashboard({ user, onLogout }) {
     }
   };
 
+  const handleResendEmail = async (card) => {
+    const idOrCode = card.card_id || card.entity_code || card.staff_id || card.user_id_code || card.id;
+    try {
+      const res = await authFetch(`/api/cards/${idOrCode}/resend-email`, { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        showToast(json.message || 'ID Card email resent!');
+      } else {
+        showToast(json.error || 'Failed to resend email', 'error');
+      }
+    } catch (err) {
+      showToast('Network error while resending email', 'error');
+    }
+  };
+
   const navGroups = [...new Set(NAV_SECTIONS.map(s => s.group))];
 
   const renderSection = () => {
@@ -307,6 +322,7 @@ export default function AdminDashboard({ user, onLogout }) {
             onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
             onExportCsv={() => window.open('/api/cards/export')}
             onDeleteCard={handleDeleteCard}
+            onResendEmail={handleResendEmail}
           />
         );
 
@@ -328,6 +344,7 @@ export default function AdminDashboard({ user, onLogout }) {
             onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
             onExportCsv={() => window.open('/api/cards/export')}
             onDeleteCard={handleDeleteCard}
+            onResendEmail={handleResendEmail}
           />
         );
 
@@ -354,6 +371,7 @@ export default function AdminDashboard({ user, onLogout }) {
             onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
             onExportCsv={() => window.open('/api/cards/export')}
             onDeleteCard={handleDeleteCard}
+            onResendEmail={handleResendEmail}
           />
         );
 
@@ -395,6 +413,7 @@ export default function AdminDashboard({ user, onLogout }) {
             onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
             onExportCsv={() => window.open('/api/cards/export')}
             onDeleteCard={handleDeleteCard}
+            onResendEmail={handleResendEmail}
           />
         );
       case 'pending-approvals':

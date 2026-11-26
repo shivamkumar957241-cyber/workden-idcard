@@ -354,10 +354,11 @@ router.get('/all', requireAuth, (req, res) => {
     if (req.user.role !== 'ADMIN') return res.status(403).json({ success: false, error: 'Admin access required.' });
     const { status, type, search, page = 1, limit = 50 } = req.query;
     let query = `
-      SELECT pc.*, u.email as user_email, a.full_name as applicant_name, a.mobile, a.email as app_email, a.application_type
+      SELECT pc.*, u.email as user_email, a.full_name as applicant_name, a.mobile, a.email as app_email,
+             COALESCE(a.application_type, CASE WHEN pc.member_id LIKE 'WD-EMP-%' THEN 'STAFF' ELSE 'USER' END) as application_type
       FROM payment_confirmations pc
-      JOIN auth_users u ON u.id = pc.applicant_user_id
-      JOIN id_applications a ON a.id = pc.application_id
+      LEFT JOIN auth_users u ON u.id = pc.applicant_user_id
+      LEFT JOIN id_applications a ON a.id = pc.application_id
       WHERE 1=1
     `;
     const params = [];
