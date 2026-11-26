@@ -204,7 +204,8 @@ function buildIdCardGeneratedHtml({
   profileType,
   isUnlocked,
   downloadUrl,
-  previewImgUrl
+  previewImgUrl,
+  refId
 }) {
   const isStaff = profileType === 'STAFF';
   const roleLabel = isStaff ? 'Staff ID Card' : 'Member ID Card';
@@ -285,7 +286,7 @@ function buildIdCardGeneratedHtml({
           <tr>
             <td style="padding:16px 26px;background-color:#111111;border-top:1px solid #262626;text-align:center;">
               <p style="margin:0;font-size:11px;color:#777777;">
-                &copy; ${new Date().getFullYear()} WorkDen &bull; <a href="https://workden.online" style="color:#999999;text-decoration:none;">workden.online</a> &bull; support@workden.online
+                &copy; ${new Date().getFullYear()} WorkDen &bull; <a href="https://workden.online" style="color:#999999;text-decoration:none;">workden.online</a> &bull; support@workden.online${refId ? ` &bull; Ref: #${refId}` : ''}
               </p>
             </td>
           </tr>
@@ -321,19 +322,24 @@ async function sendIdCardGeneratedEmail({
     const accessToken = generateCardAccessToken(entityCode, profileType);
     const downloadUrl = `${portalUrl}/card-access/${accessToken}`;
     const previewImgUrl = `${portalUrl}/api/public-card/${accessToken}/preview.png`;
+    const refId = Date.now().toString(36).toUpperCase();
 
     const htmlContent = buildIdCardGeneratedHtml({
       fullName,
       profileType,
       isUnlocked,
       downloadUrl,
-      previewImgUrl
+      previewImgUrl,
+      refId
     });
 
     const payload = {
       sender: { name: senderName, email: senderEmail },
       to: [{ email: toEmail, name: fullName || toEmail }],
       subject: `Your Official WorkDen ${isStaff ? 'Staff' : 'Member'} ID Card is Ready (${entityCode})`,
+      headers: {
+        'X-Entity-Ref-ID': `wd-${entityCode || 'card'}-${Date.now()}`
+      },
       htmlContent
     };
 
