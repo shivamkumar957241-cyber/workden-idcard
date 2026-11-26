@@ -781,6 +781,67 @@ export default function StaffDashboard({ user, onLogout }) {
             {/* TAB 2: APPLY FOR STAFF ID (FREE) */}
             {/* ======================================================== */}
             {activeTab === 'apply' && (
+              application && !isRejected ? (
+                <div className="bg-[#171717] border border-[#353535] rounded-3xl p-6 sm:p-8 max-w-3xl mx-auto shadow-2xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 mb-6 border-b border-[#2a2a2a]">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-black text-white">Submitted Staff Application</h2>
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
+                          isApproved ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                        }`}>
+                          {isApproved ? 'APPROVED' : 'UNDER REVIEW'}
+                        </span>
+                      </div>
+                      <p className="text-[#888] text-xs mt-1">
+                        Application #{application.id} • Submitted on {formatDateIST(application.created_at)} (Read-only)
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-[#888] bg-[#121212] px-3 py-1.5 rounded-xl border border-[#2a2a2a]">
+                      <Lock className="w-3.5 h-3.5 text-[#F5C542]" />
+                      <span>Locked after submission</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 mb-6 p-4 rounded-2xl bg-[#121212] border border-[#2a2a2a]">
+                    <img
+                      src={application.photo_url || '/logo.png'}
+                      alt={application.full_name}
+                      className="w-16 h-20 rounded-xl object-cover border border-[#353535] bg-black"
+                      onError={e => { e.currentTarget.src = WORKDEN_LOGO_BASE64; }}
+                    />
+                    <div>
+                      <p className="text-white font-extrabold text-base">{application.full_name}</p>
+                      <p className="text-[#F5C542] text-xs font-bold mt-0.5">{application.designation || 'Staff'} • {application.department || 'Operations'}</p>
+                      <p className="text-[#888] text-xs mt-0.5">{application.email} • {application.mobile}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { label: 'Full Name', value: application.full_name },
+                      { label: 'Mobile Number', value: application.mobile },
+                      { label: 'Email Address', value: application.email },
+                      { label: 'City', value: application.city || '—' },
+                      { label: 'Department', value: application.department || '—' },
+                      { label: 'Designation', value: application.designation || '—' },
+                      { label: 'Qualification', value: application.qualification || '—' },
+                      { label: 'Aadhar Number', value: application.aadhar_number || '—' }
+                    ].map(item => (
+                      <div key={item.label} className="bg-[#121212] border border-[#2a2a2a] rounded-xl p-3">
+                        <p className="text-[#777] text-[10px] uppercase font-bold">{item.label}</p>
+                        <p className="text-white font-semibold text-xs mt-0.5">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {application.residential_address && (
+                    <div className="mt-3 bg-[#121212] border border-[#2a2a2a] rounded-xl p-3">
+                      <p className="text-[#777] text-[10px] uppercase font-bold">Residential Address</p>
+                      <p className="text-white font-semibold text-xs mt-0.5">{application.residential_address}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
               <div className="bg-[#171717] border border-[#353535] rounded-3xl p-6 sm:p-8 max-w-3xl mx-auto shadow-2xl">
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-3">
@@ -1066,6 +1127,7 @@ export default function StaffDashboard({ user, onLogout }) {
                   </button>
                 </form>
               </div>
+              )
             )}
 
             {/* ======================================================== */}

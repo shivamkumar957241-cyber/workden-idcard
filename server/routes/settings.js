@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, logAudit } = require('../db');
+const { sendIdCardGeneratedEmail } = require('../utils/email');
 
 // GET /api/settings - Fetch all settings, departments, designations
 router.get('/', (req, res) => {
@@ -85,6 +86,29 @@ router.put('/', (req, res) => {
     res.json({ success: true, message: 'All Portal & ID Card Settings updated successfully' });
   } catch (err) {
     console.error('Error updating settings:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/settings/test-email - Send a test email via Brevo using current settings
+router.post('/test-email', async (req, res) => {
+  try {
+    const { to_email } = req.body;
+    if (!to_email) return res.status(400).json({ success: false, error: 'Test email address required.' });
+    const result = await sendIdCardGeneratedEmail({
+      toEmail: to_email,
+      fullName: 'Test User',
+      entityCode: 'WD-TEST-2026-00001',
+      profileType: 'USER',
+      currentPlan: '₹499 – Full Access',
+      isUnlocked: false
+    });
+    if (result.success) {
+      res.json({ success: true, message: `Test email sent to ${to_email}!` });
+    } else {
+      res.status(400).json({ success: false, error: result.error || 'Failed to send test email.' });
+    }
+  } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });

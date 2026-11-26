@@ -307,16 +307,40 @@ export default function SettingsView({
 
             <div className="sm:col-span-2">
               <label className="block font-semibold text-[#B5B5B5] mb-1.5 uppercase tracking-wider text-[11px]">
-                Brevo API Key (Leave blank to use .env)
+                Brevo API Key (Paste key &amp; Save)
               </label>
-              <input
-                type="password"
-                name="brevo_api_key"
-                value={formData.brevo_api_key}
-                onChange={handleChange}
-                placeholder="xkeysib-..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-white font-mono focus:outline-none focus:border-[#F5C542] text-xs transition-all"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  name="brevo_api_key"
+                  value={formData.brevo_api_key}
+                  onChange={handleChange}
+                  placeholder="xkeysib-..."
+                  className="flex-1 px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-white font-mono focus:outline-none focus:border-[#F5C542] text-xs transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const email = window.prompt('Enter email address to send test ID card email:', formData.official_email || 'support@workden.online');
+                    if (!email) return;
+                    try {
+                      const token = localStorage.getItem('workden_token');
+                      const res = await fetch('/api/settings/test-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                        body: JSON.stringify({ to_email: email })
+                      });
+                      const json = await res.json();
+                      setStatusMsg({ type: json.success ? 'success' : 'error', text: json.message || json.error });
+                    } catch (e) {
+                      setStatusMsg({ type: 'error', text: e.message });
+                    }
+                  }}
+                  className="px-3.5 py-2.5 rounded-xl bg-[#222] border border-[#F5C542]/40 text-[#F5C542] hover:bg-[#F5C542] hover:text-black font-bold text-xs transition cursor-pointer whitespace-nowrap"
+                >
+                  Test Email
+                </button>
+              </div>
             </div>
           </div>
 
