@@ -37,6 +37,13 @@ router.post('/', requireAuth, (req, res) => {
 
     const appType = application_type || 'USER';
 
+    if (appType === 'STAFF' && (!aadhar_front || !aadhar_back)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Both front and back sides of Aadhar Card must be uploaded.'
+      });
+    }
+
     const result = db.prepare(`
       INSERT INTO id_applications (
         applicant_user_id, application_type, full_name, photo_url, mobile, email,

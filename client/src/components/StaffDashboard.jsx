@@ -49,7 +49,7 @@ export default function StaffDashboard({ user, onLogout }) {
     designation: '',
     joining_date: new Date().toISOString().split('T')[0],
     employment_type: 'Full-time',
-    work_location: 'Headquarters - Noida',
+    work_location: '',
     remarks: ''
   });
 
@@ -191,6 +191,9 @@ export default function StaffDashboard({ user, onLogout }) {
     if (!form.city) { setError('City is required.'); return; }
     if (!form.department) { setError('Department is required for Staff ID.'); return; }
     if (!form.designation) { setError('Designation is required for Staff ID.'); return; }
+    if (!form.work_location || !form.work_location.trim()) { setError('Work Location is required for Staff ID.'); return; }
+    if (!form.aadhar_front) { setError('Please upload Aadhar Card (Front Side) before submitting.'); return; }
+    if (!form.aadhar_back) { setError('Please upload Aadhar Card (Back Side) before submitting.'); return; }
 
     setSubmitting(true);
     try {
@@ -974,7 +977,7 @@ export default function StaffDashboard({ user, onLogout }) {
                       <select
                         required
                         value={form.department}
-                        onChange={e => setForm({ ...form, department: e.target.value })}
+                        onChange={e => setForm({ ...form, department: e.target.value, designation: '' })}
                         className="w-full bg-[#121212] border border-[#353535] focus:border-[#F5C542] text-white text-xs rounded-xl p-3 outline-none transition"
                       >
                         <option value="">Select Department</option>
@@ -986,14 +989,25 @@ export default function StaffDashboard({ user, onLogout }) {
 
                     <div>
                       <label className="block text-[#aaa] text-xs font-semibold mb-1.5">Designation *</label>
-                      <input
-                        type="text"
-                        required
-                        value={form.designation}
-                        onChange={e => setForm({ ...form, designation: e.target.value })}
-                        placeholder="e.g. Operations Manager"
-                        className="w-full bg-[#121212] border border-[#353535] focus:border-[#F5C542] text-white text-xs rounded-xl p-3 outline-none transition"
-                      />
+                      {(() => {
+                        const filtered = designations.filter(
+                          d => !form.department || !d.department_name || d.department_name === form.department
+                        );
+                        const options = filtered.length > 0 ? filtered : designations;
+                        return (
+                          <select
+                            required
+                            value={form.designation}
+                            onChange={e => setForm({ ...form, designation: e.target.value })}
+                            className="w-full bg-[#121212] border border-[#353535] focus:border-[#F5C542] text-white text-xs rounded-xl p-3 outline-none transition"
+                          >
+                            <option value="">Select Designation</option>
+                            {options.map(d => (
+                              <option key={d.id || d.name} value={d.name}>{d.name}</option>
+                            ))}
+                          </select>
+                        );
+                      })()}
                     </div>
 
                     <div>
@@ -1007,9 +1021,10 @@ export default function StaffDashboard({ user, onLogout }) {
                     </div>
 
                     <div>
-                      <label className="block text-[#aaa] text-xs font-semibold mb-1.5">Work Location</label>
+                      <label className="block text-[#aaa] text-xs font-semibold mb-1.5">Work Location *</label>
                       <input
                         type="text"
+                        required
                         value={form.work_location}
                         onChange={e => setForm({ ...form, work_location: e.target.value })}
                         placeholder="e.g. Headquarters - Noida"
@@ -1022,17 +1037,17 @@ export default function StaffDashboard({ user, onLogout }) {
                   <div className="bg-[#121212] border border-[#2e2e2e] rounded-2xl p-5 space-y-4">
                     <div>
                       <h4 className="text-white font-bold text-xs flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-[#F5C542]" /> Upload Aadhar Card (Both Sides)
+                        <FileText className="w-4 h-4 text-[#F5C542]" /> Upload Aadhar Card (Both Sides) *
                       </h4>
                       <p className="text-[#777] text-[11px] mt-0.5">
-                        Upload front and back side of your Aadhar Card (Image JPG/PNG or PDF up to 10MB each).
+                        Required: Upload front and back side of your Aadhar Card (Image JPG/PNG or PDF up to 10MB each).
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Front Side */}
                       <div className="p-4 rounded-xl bg-[#171717] border border-[#353535] text-center">
-                        <p className="text-white font-bold text-xs mb-2">Aadhar Card - Front Side</p>
+                        <p className="text-white font-bold text-xs mb-2">Aadhar Card - Front Side *</p>
                         <input
                           type="file"
                           ref={aadharFrontInputRef}
@@ -1069,7 +1084,7 @@ export default function StaffDashboard({ user, onLogout }) {
 
                       {/* Back Side */}
                       <div className="p-4 rounded-xl bg-[#171717] border border-[#353535] text-center">
-                        <p className="text-white font-bold text-xs mb-2">Aadhar Card - Back Side</p>
+                        <p className="text-white font-bold text-xs mb-2">Aadhar Card - Back Side *</p>
                         <input
                           type="file"
                           ref={aadharBackInputRef}

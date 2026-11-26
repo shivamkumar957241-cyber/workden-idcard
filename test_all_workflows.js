@@ -181,6 +181,22 @@ async function runTests() {
     staffToken = regStaffRes.body.token;
     console.log(`✅ Staff registered with role: ${regStaffRes.body.user.role}`);
 
+    const missingAadharRes = await request('POST', '/api/applications', {
+      full_name: 'Pooja Verma',
+      mobile: '+91 9988776655',
+      email: staffEmail,
+      city: 'Noida',
+      department: 'Technology & Operations',
+      designation: 'Operations Manager',
+      work_location: 'Noida Sector 62',
+      qualification: 'B.Tech IT',
+      aadhar_number: '1234 5678 9012',
+      application_type: 'STAFF'
+    }, staffToken);
+    if (missingAadharRes.status !== 400) {
+      throw new Error('Staff application without Aadhar upload should be rejected with 400: ' + JSON.stringify(missingAadharRes));
+    }
+
     const appStaffRes = await request('POST', '/api/applications', {
       full_name: 'Pooja Verma',
       mobile: '+91 9988776655',
@@ -188,8 +204,11 @@ async function runTests() {
       city: 'Noida',
       department: 'Technology & Operations',
       designation: 'Operations Manager',
+      work_location: 'Noida Sector 62',
       qualification: 'B.Tech IT',
       aadhar_number: '1234 5678 9012',
+      aadhar_front: '/uploads/test-aadhar-front.png',
+      aadhar_back: '/uploads/test-aadhar-back.png',
       application_type: 'STAFF'
     }, staffToken);
     staffAppId = appStaffRes.body.application_id;
