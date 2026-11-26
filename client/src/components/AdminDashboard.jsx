@@ -24,15 +24,13 @@ const NAV_SECTIONS = [
   // Dashboard
   { id: 'overview', label: 'Dashboard Overview', icon: TrendingUp, group: 'Main' },
 
-  // Member Management & Workflows
-  { id: 'member-management', label: 'Member Management', icon: Users, group: 'Member Portal' },
-  { id: 'member-applications', label: 'Member ID Applications', icon: FileText, group: 'Member Portal', badge: 'member_pending' },
-  { id: 'member-downloads', label: 'Member Card Downloads', icon: Layers, group: 'Member Portal' },
+  // Applications & Cards (Unified Member & Staff with Filters)
+  { id: 'id-applications', label: 'ID Applications', icon: FileText, group: 'Applications & Cards', badge: 'pending' },
+  { id: 'card-downloads', label: 'Issued ID Cards', icon: Layers, group: 'Applications & Cards' },
 
-  // Staff Management & Workflows
-  { id: 'staff-management', label: 'Staff Management', icon: Shield, group: 'Staff Portal' },
-  { id: 'staff-applications', label: 'Staff ID Applications', icon: FileText, group: 'Staff Portal', badge: 'staff_pending' },
-  { id: 'staff-downloads', label: 'Staff Card Downloads', icon: Layers, group: 'Staff Portal' },
+  // Management
+  { id: 'member-management', label: 'Member Management', icon: Users, group: 'Management' },
+  { id: 'staff-management', label: 'Staff Management', icon: Shield, group: 'Management' },
 
   // Unified Payments & Operations
   { id: 'payments', label: 'Payments & Approvals', icon: CreditCard, group: 'Payments & Operations', badge: 'payment_pending' },
@@ -265,17 +263,19 @@ export default function AdminDashboard({ user, onLogout }) {
       case 'user-accounts':
         return <UserAccountsView onPreviewCard={c => setPreviewCard(c)} />;
 
-      // 4. Member ID Card Applications
+      // Unified ID Applications (Member & Staff with Role Filter)
+      case 'id-applications':
       case 'member-applications':
+      case 'staff-applications':
+      case 'pending-approvals':
         return (
           <ApplicationsView
-            filterType="USER"
+            filterType="ALL"
             initialStatus="PENDING"
-            onApprovalSuccess={() => { fetchAllCards(); fetchUsers(); showToast('Member application processed!'); }}
+            onApprovalSuccess={() => { fetchAllCards(); fetchStaff(); fetchUsers(); showToast('Application processed!'); }}
           />
         );
 
-      // 6. Member ID Card Payments
       // Unified Payments & Approvals (Member & Staff)
       case 'payments':
       case 'member-payments':
@@ -290,15 +290,18 @@ export default function AdminDashboard({ user, onLogout }) {
           />
         );
 
-      // 8. Member ID Card Downloads
+      // Unified Issued ID Cards & Downloads (Member & Staff with Role Filter)
+      case 'card-downloads':
       case 'member-downloads':
+      case 'staff-downloads':
+      case 'all-issued':
       case 'user-cards':
         return (
           <UnifiedCardsTable
-            title="Member ID Card Downloads"
-            subtitle="Approved and active member cards"
+            title="Issued ID Cards & Downloads"
+            subtitle="All approved and active Member & Staff ID cards"
             icon={Layers}
-            cards={unifiedCards.filter(c => c.profile_type === 'USER')}
+            cards={unifiedCards}
             onPreviewCard={c => setPreviewCard({ ...c, mobile: c.mobile, phone: c.mobile })}
             onApproveCard={(id, t) => handleApprove(id, t)}
             onOpenStatusModal={c => setStatusModalConfig({ isOpen: true, card: c, actionType: 'STATUS', targetStatus: 'SUSPENDED' })}
@@ -554,23 +557,25 @@ export default function AdminDashboard({ user, onLogout }) {
 // Overview Section Component
 function OverviewSection({ counts, onNavigate }) {
   const stats = [
-    { label: 'Active Cards', value: counts.active, color: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30', icon: CheckCircle2, section: 'all-issued' },
-    { label: 'Staff IDs', value: counts.total_staff, color: 'bg-[#F5C542]/20 text-[#F5C542] border border-[#F5C542]/30', icon: Users, section: 'staff-cards' },
-    { label: 'User IDs', value: counts.total_users, color: 'bg-[#FFD84D]/20 text-[#FFD84D] border border-[#FFD84D]/30', icon: CreditCard, section: 'user-cards' },
-    { label: 'Pending Review', value: counts.pending, color: 'bg-amber-500/20 text-amber-400 border border-amber-500/30', icon: Clock, section: 'pending-approvals' },
-    { label: 'Expired', value: counts.expired, color: 'bg-stone-500/20 text-stone-300 border border-stone-500/30', icon: AlertOctagon, section: 'expired-cards' },
-    { label: 'Revoked', value: counts.revoked, color: 'bg-red-500/20 text-red-400 border border-red-500/30', icon: Ban, section: 'suspended-revoked' },
+    { label: 'Active ID Cards', value: counts.active, sub: `${counts.total_issued || 0} Total Issued`, color: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30', icon: CheckCircle2, section: 'card-downloads' },
+    { label: 'Pending Applications', value: counts.pending, sub: `${counts.member_pending || 0} Member • ${counts.staff_pending || 0} Staff`, color: 'bg-amber-500/20 text-amber-400 border border-amber-500/30', icon: Clock, section: 'id-applications' },
+    { label: 'WorkDen Members', value: counts.total_users, sub: 'Registered member cards', color: 'bg-[#F5C542]/20 text-[#F5C542] border border-[#F5C542]/30', icon: Users, section: 'member-management' },
+    { label: 'WorkDen Staff', value: counts.total_staff, sub: 'Registered staff cards', color: 'bg-sky-500/20 text-sky-400 border border-sky-500/30', icon: Shield, section: 'staff-management' },
+    { label: 'Pending Payments', value: counts.payment_pending, sub: 'Member ₹99 • Staff ₹249', color: 'bg-[#FFD84D]/20 text-[#FFD84D] border border-[#FFD84D]/30', icon: CreditCard, section: 'payments' },
+    { label: 'Expired / Revoked', value: (counts.expired || 0) + (counts.revoked || 0), sub: `${counts.expired || 0} Expired • ${counts.revoked || 0} Revoked`, color: 'bg-red-500/20 text-red-400 border border-red-500/30', icon: AlertOctagon, section: 'card-downloads' },
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-white text-xl font-bold mb-1">ID Card Management</h2>
-        <p className="text-[#888] text-sm">WorkDen Professional Identity System — Admin Control Centre</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h2 className="text-white text-xl font-black tracking-tight">WorkDen Admin Control Centre</h2>
+          <p className="text-[#888] text-xs mt-0.5">Unified management for Member & Staff ID Applications, Payments (₹99 / ₹249), and QR Verification</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        {stats.map(({ label, value, color, icon: Icon, section }) => (
+        {stats.map(({ label, value, sub, color, icon: Icon, section }) => (
           <button
             key={label}
             onClick={() => onNavigate(section)}
@@ -580,7 +585,8 @@ function OverviewSection({ counts, onNavigate }) {
               <Icon className="w-4 h-4" />
             </div>
             <p className="text-white font-extrabold text-2xl">{value}</p>
-            <p className="text-[#888] text-xs mt-0.5">{label}</p>
+            <p className="text-white/90 font-semibold text-xs mt-0.5">{label}</p>
+            <p className="text-[#777] text-[10px] mt-0.5 truncate">{sub}</p>
           </button>
         ))}
       </div>
@@ -588,28 +594,28 @@ function OverviewSection({ counts, onNavigate }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#171717] border border-[#353535] rounded-2xl p-5">
           <h3 className="text-white font-bold text-sm mb-3">Quick Actions & Workflows</h3>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             {[
-              { label: 'Member ID Applications', section: 'member-applications', color: 'text-[#F5C542] bg-[#F5C542]/10 border-[#F5C542]/30 hover:bg-[#F5C542]/20' },
-              { label: 'Staff ID Applications', section: 'staff-applications', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' },
-              { label: 'Payment Approvals (₹99)', section: 'payment-approvals', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20' },
-              { label: 'QR Management', section: 'reports-stats', color: 'text-white bg-[#222222] border-[#353535] hover:border-[#F5C542] hover:text-[#F5C542]' },
+              { label: 'ID Applications (Member & Staff)', section: 'id-applications', color: 'text-[#F5C542] bg-[#F5C542]/10 border-[#F5C542]/30 hover:bg-[#F5C542]/20' },
+              { label: 'Payments & Approvals', section: 'payments', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' },
+              { label: 'Issued ID Cards & Downloads', section: 'card-downloads', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20' },
+              { label: 'QR Verification & Reports', section: 'reports-stats', color: 'text-white bg-[#222222] border-[#353535] hover:border-[#F5C542] hover:text-[#F5C542]' },
             ].map(({ label, section, color }) => (
               <button key={label} onClick={() => onNavigate(section)}
-                className={`px-3 py-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${color}`}>
+                className={`px-3 py-3 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${color}`}>
                 {label} →
               </button>
             ))}
           </div>
         </div>
         <div className="bg-[#171717] border border-[#353535] rounded-2xl p-5">
-          <h3 className="text-white font-bold text-sm mb-3">System Status</h3>
+          <h3 className="text-white font-bold text-sm mb-3">Portal Configuration & Status</h3>
           <div className="space-y-2">
             {[
-              { label: 'ID Card System', status: 'Operational', color: 'bg-emerald-400' },
-              { label: 'QR Verification', status: 'Active', color: 'bg-emerald-400' },
-              { label: 'Auto-Expiry Check', status: 'Running (hourly)', color: 'bg-[#F5C542]' },
-              { label: 'Audit Logging', status: 'Enabled', color: 'bg-emerald-400' },
+              { label: 'Razorpay Live Gateway', status: 'Member ₹99 • Staff ₹249', color: 'bg-emerald-400' },
+              { label: 'ID Card Auto-Unlock', status: 'Active on Payment Verify', color: 'bg-emerald-400' },
+              { label: 'QR Verification', status: 'Signed Live Tokens', color: 'bg-[#F5C542]' },
+              { label: 'Audit & Expiry Monitor', status: 'Operational', color: 'bg-emerald-400' },
             ].map(({ label, status, color }) => (
               <div key={label} className="flex items-center justify-between py-1.5 border-b border-[#2a2a2a] last:border-0">
                 <span className="text-[#888] text-xs">{label}</span>

@@ -24,9 +24,11 @@ export default function UnifiedCardsTable({
 }) {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   const filtered = cards.filter((c) => {
     if (typeFilter !== 'ALL' && c.profile_type !== typeFilter) return false;
+    if (statusFilter !== 'ALL' && c.card_status !== statusFilter) return false;
     if (!search.trim()) return true;
     const term = search.toLowerCase();
     return (
@@ -62,7 +64,26 @@ export default function UnifiedCardsTable({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-[#171717] p-4 rounded-2xl border border-[#353535] shadow-xl flex flex-col sm:flex-row gap-3">
+      <div className="bg-[#171717] p-4 rounded-2xl border border-[#353535] shadow-xl flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+        {/* Role Filter Pills */}
+        <div className="flex items-center gap-1 bg-[#111] p-1 rounded-xl border border-[#2a2a2a] self-start">
+          {[
+            { id: 'ALL', label: 'All' },
+            { id: 'USER', label: 'Members' },
+            { id: 'STAFF', label: 'Staff' }
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTypeFilter(t.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                typeFilter === t.id ? 'bg-[#F5C542] text-black shadow-sm' : 'text-[#888] hover:text-white'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex-1 relative">
           <Search className="w-4 h-4 text-[#888] absolute left-3 top-2.5" />
           <input
@@ -74,15 +95,18 @@ export default function UnifiedCardsTable({
           />
         </div>
 
-        <div className="sm:w-56">
+        <div className="sm:w-44">
           <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
             className="w-full px-3 py-2 rounded-xl border border-[#353535] text-xs bg-[#222222] text-white font-medium focus:outline-none focus:border-[#F5C542] cursor-pointer"
           >
-            <option value="ALL">All Types (Staff & Members)</option>
-            <option value="STAFF">Staff IDs Only</option>
-            <option value="USER">User IDs Only</option>
+            <option value="ALL">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="PENDING">Pending</option>
+            <option value="EXPIRED">Expired</option>
+            <option value="SUSPENDED">Suspended</option>
+            <option value="REVOKED">Revoked</option>
           </select>
         </div>
       </div>
