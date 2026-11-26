@@ -19,7 +19,7 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [typeFilter, setTypeFilter] = useState(filterType);
   const [selectedApp, setSelectedApp] = useState(null);
-  const [processing, setProcessing] = useState(false);
+  const [processingId, setProcessingId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(null);
   const [toast, setToast] = useState(null);
@@ -46,7 +46,7 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
   }, [typeFilter]);
 
   const handleApprove = async (appId) => {
-    setProcessing(true);
+    setProcessingId(appId);
     try {
       const res = await authFetch(`/api/applications/${appId}/approve`, {
         method: 'POST',
@@ -54,7 +54,12 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
       });
       const json = await res.json();
       if (json.success) {
-        showMsg(json.message);
+        const emailNote = json.email_sent
+          ? ' • Email sent!'
+          : json.email_error
+          ? ` • Email skipped: ${json.email_error}`
+          : '';
+        showMsg(json.message + emailNote);
         setSelectedApp(null);
         fetchApplications();
         onApprovalSuccess?.();
@@ -62,12 +67,12 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
         showMsg(json.error || 'Approval failed', 'error');
       }
     } catch { showMsg('Server error', 'error'); }
-    finally { setProcessing(false); }
+    finally { setProcessingId(null); }
   };
 
   const handleReject = async () => {
     if (!showRejectModal) return;
-    setProcessing(true);
+    setProcessingId(showRejectModal);
     try {
       const res = await authFetch(`/api/applications/${showRejectModal}/reject`, {
         method: 'POST',
@@ -84,7 +89,7 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
         showMsg(json.error || 'Failed', 'error');
       }
     } catch { showMsg('Server error', 'error'); }
-    finally { setProcessing(false); }
+    finally { setProcessingId(null); }
   };
 
   const handleDeleteApp = async (appId, name) => {
@@ -94,7 +99,7 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
       return;
     }
     window.getSelection()?.removeAllRanges();
-    setProcessing(true);
+    setProcessingId(appId);
     try {
       const res = await authFetch(`/api/applications/${appId}`, { method: 'DELETE' });
       const json = await res.json();
@@ -109,7 +114,7 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
     } catch {
       showMsg('Server error while deleting application', 'error');
     } finally {
-      setProcessing(false);
+      setProcessingId(null);
     }
   };
 
@@ -248,34 +253,34 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-shrink-0 mt-2 sm:mt-0">
-                    <button onClick={() => setSelectedApp(selectedApp?.id === app.id ? null : app)}
-                      className="p-2 text-[#888] hover:text-[#F5C542] hover:bg-[#222222] rounded-lg transition-all border border-[#353535]"
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedApp(selectedApp?.id === app.id ? null : app); }}
+                      className="p-2 text-[#888] hover:text-[#F5C542] hover:bg-[#222222] rounded-lg transition-all border border-[#353535] cursor-pointer"
                       title="View Details">
                       <Eye className="w-4 h-4" />
                     </button>
                     {app.status === 'PENDING' && (
                       <>
                         <button
-                          onClick={() => handleApprove(app.id)}
-                          disabled={processing}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+                          onClick={(e) => { e.stopPropagation(); handleApprove(app.id); }}
+                          disabled={processingId === app.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer select-none"
                         >
-                          {processing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                          {processingId === app.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                           Approve
                         </button>
                         <button
-                          onClick={() => setShowRejectModal(app.id)}
-                          disabled={processing}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+                          onClick={(e) => { e.stopPropagation(); setShowRejectModal(app.id); }}
+                          disabled={processingId === app.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer select-none"
                         >
                           <X className="w-3.5 h-3.5" /> Reject
                         </button>
                       </>
                     )}
                     <button
-                      onClick={() => handleDeleteApp(app.id, app.full_name)}
-                      disabled={processing}
-                      className="p-2 text-stone-400 hover:text-rose-400 hover:bg-rose-500/15 rounded-lg transition-all border border-[#353535]"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteApp(app.id, app.full_name); }}
+                      disabled={processingId === app.id}
+                      className="p-2 text-stone-400 hover:text-rose-400 hover:bg-rose-500/15 rounded-lg transition-all border border-[#353535] cursor-pointer select-none"
                       title="Permanently Delete Application"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -434,9 +439,9 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
               className="w-full bg-[#222222] border border-[#353535] rounded-xl px-4 py-3 text-white placeholder-[#666] text-sm focus:outline-none focus:border-red-400/50 transition-all resize-none mb-4"
             />
             <div className="flex gap-3">
-              <button onClick={handleReject} disabled={processing}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50">
-                {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+              <button onClick={handleReject} disabled={processingId === showRejectModal}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50 cursor-pointer">
+                {processingId === showRejectModal ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                 Confirm Reject
               </button>
               <button onClick={() => { setShowRejectModal(null); setRejectionReason(''); }}

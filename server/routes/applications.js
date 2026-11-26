@@ -171,7 +171,7 @@ router.get('/', requireAuth, requireAdmin, (req, res) => {
 });
 
 // POST /api/applications/:id/approve - Admin approves an application
-router.post('/:id/approve', requireAuth, requireAdmin, (req, res) => {
+router.post('/:id/approve', requireAuth, requireAdmin, async (req, res) => {
   try {
     const appId = parseInt(req.params.id);
     const { validity_period, expiry_date, remarks } = req.body;
@@ -282,8 +282,8 @@ router.post('/:id/approve', requireAuth, requireAdmin, (req, res) => {
     logAudit('APPLICATION_APPROVE', req.user.email, 'APPLICATION', appId,
       `Application approved. ${profileType} ID: ${entityCode}`, req.ip);
 
-    // Send ID Card Generated email via Brevo (non-blocking)
-    sendIdCardGeneratedEmail({
+    // Send ID Card Generated email via Brevo and return status
+    const emailResult = await sendIdCardGeneratedEmail({
       toEmail: app.email,
       fullName: app.full_name,
       entityCode,
@@ -292,14 +292,16 @@ router.post('/:id/approve', requireAuth, requireAdmin, (req, res) => {
       department: app.department,
       currentPlan: app.current_plan,
       isUnlocked: !requiresPayment
-    }).catch(() => {});
+    }).catch(e => ({ success: false, error: e.message }));
 
     res.json({
       success: true,
       message: `Application approved. ${profileType === 'STAFF' ? 'Staff' : 'User'} ID: ${entityCode} issued.`,
       entity_code: entityCode,
       card_id: cardId,
-      qr_token: token
+      qr_token: token,
+      email_sent: !!emailResult?.success,
+      email_error: emailResult?.error || null
     });
   } catch (err) {
     console.error('Approve application error:', err);
