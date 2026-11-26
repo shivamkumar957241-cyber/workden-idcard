@@ -83,7 +83,7 @@ export default function RegisterPage({ onLogin, fixedType = null }) {
               <h2 className="text-white font-black text-lg mb-2">Register as Member</h2>
               <p className="text-[#777] text-sm mb-5 leading-relaxed">Join WorkDen as a member. Apply for your Member ID card for free.</p>
               <div className="space-y-1.5 mb-5">
-                {['Free registration', 'Member ID application', 'ID card for ₹99'].map(f => (
+                {['Free registration', 'Member ID application', 'QR verified digital ID card'].map(f => (
                   <div key={f} className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                     <span className="text-[#aaa] text-xs">{f}</span>
@@ -136,10 +136,13 @@ export default function RegisterPage({ onLogin, fixedType = null }) {
       <div className="relative z-10 w-full max-w-md">
         <div className="bg-[#171717] border border-[#353535] rounded-3xl shadow-2xl overflow-hidden">
           <div className="h-1.5 w-full bg-gradient-to-r from-[#F5C542] via-[#FFD84D] to-[#F5C542]" />
-          <div className="p-7">
-            <button onClick={() => { if (fixedType) { navigate('/'); } else { setRegType(null); navigate('/register', { replace: true }); } }}
-              className="flex items-center gap-1.5 text-[#888] hover:text-[#F5C542] text-xs mb-6 transition-colors cursor-pointer">
-              <ArrowLeft className="w-3.5 h-3.5" /> {fixedType ? 'Back to Home' : 'Back to options'}
+          <div className="p-7 relative">
+            <button
+              onClick={() => { if (fixedType) { navigate('/'); } else { setRegType(null); navigate('/register', { replace: true }); } }}
+              title="Back"
+              className="w-9 h-9 rounded-xl bg-[#222] border border-[#353535] hover:border-[#F5C542] text-[#aaa] hover:text-[#F5C542] flex items-center justify-center transition-colors cursor-pointer mb-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
             </button>
 
             <div className="text-center mb-7">
@@ -164,7 +167,7 @@ export default function RegisterPage({ onLogin, fixedType = null }) {
             {!isStaff && (
               <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 mb-5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <p className="text-emerald-300 text-xs">Application is completely FREE. ID card download costs ₹99.</p>
+                <p className="text-emerald-300 text-xs">Application is completely FREE. Apply now for your official WorkDen ID card.</p>
               </div>
             )}
 

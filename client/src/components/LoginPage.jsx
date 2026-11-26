@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, AlertCircle, Users, Briefcase, Shield } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle, Users, Briefcase, Shield, ArrowLeft } from 'lucide-react';
 import API_BASE from '../api';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
 
@@ -142,7 +142,17 @@ export default function LoginPage({ onLogin, fixedType = null }) {
           style={{ backgroundColor: '#171717', borderColor: '#353535', boxShadow: '0 25px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(245,197,66,0.08)' }}>
           <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, transparent, ${cfg.accent}, transparent)` }} />
 
-          <div className="p-7 sm:p-8">
+          <div className="p-7 sm:p-8 relative">
+            {/* Top-left Back Arrow */}
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              title="Back"
+              className="w-9 h-9 rounded-xl bg-[#222] border border-[#353535] hover:border-[#F5C542] text-[#aaa] hover:text-[#F5C542] flex items-center justify-center transition-colors cursor-pointer mb-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+
             {/* Logo & Dedicated Portal Title */}
             <div className="text-center mb-7">
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3 shadow-xl overflow-hidden border"
@@ -211,14 +221,6 @@ export default function LoginPage({ onLogin, fixedType = null }) {
                 </button>
               </p>
             )}
-
-            <p className="text-center text-[#666] text-xs mt-3">
-              <button onClick={() => navigate('/')} className="hover:text-[#aaa] transition-colors cursor-pointer">← Back to Home</button>
-            </p>
-          </div>
-
-          <div className="border-t px-7 py-3 text-center" style={{ backgroundColor: '#131313', borderColor: '#2a2a2a' }}>
-            <p className="text-[11px]" style={{ color: '#737373' }}>workden.online · Official Identity Portal</p>
           </div>
         </div>
       </div>

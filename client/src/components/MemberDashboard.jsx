@@ -514,8 +514,9 @@ export default function MemberDashboard({ user, onLogout }) {
                         Welcome, {user?.full_name || 'WorkDen Member'}
                       </h1>
                       <p className="text-[#888] text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
-                        Apply for your official WorkDen Identity Card with secure cryptographic QR verification.
-                        Application is 100% free; ₹99 download fee applies only after Admin approval.
+                        {isApproved && !isDownloadUnlocked
+                          ? 'Your ID card application is approved! Unlock your card below to download PDF & PNG.'
+                          : 'Apply for your official WorkDen Identity Card with secure cryptographic QR verification. Application is 100% free.'}
                       </p>
                     </div>
 
@@ -618,12 +619,12 @@ export default function MemberDashboard({ user, onLogout }) {
                           <Lock className="w-4 h-4 text-[#F5C542]" />
                         )}
                       </div>
-                      <p className="font-bold text-xs">₹99 Razorpay Payment</p>
-                      <p className="text-[11px] text-[#777] mt-1">Unlock high-resolution ID card</p>
+                      <p className="font-bold text-xs">{isApproved ? '₹99 Card Verification' : 'ID Card Issuance'}</p>
+                      <p className="text-[11px] text-[#777] mt-1">{isApproved ? 'Unlock high-resolution ID card' : 'Digital card generated after approval'}</p>
                       <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                         isDownloadUnlocked ? 'bg-emerald-500/10 text-emerald-400' : isPaymentPaid ? 'bg-amber-500/10 text-amber-300' : isApproved ? 'bg-[#F5C542]/20 text-[#F5C542]' : 'bg-[#222] text-[#666]'
                       }`}>
-                        {isDownloadUnlocked ? 'Verified' : isPaymentPaid ? 'Confirmation Sent' : isApproved ? 'Payment Ready' : 'Locked'}
+                        {isDownloadUnlocked ? 'Verified' : isPaymentPaid ? 'Confirmation Sent' : isApproved ? 'Payment Ready' : 'Waiting'}
                       </span>
                     </div>
 
@@ -1000,7 +1001,7 @@ export default function MemberDashboard({ user, onLogout }) {
                     <p className="text-[11px] text-[#888] leading-relaxed">
                       By submitting this form, you certify that the information provided is accurate.
                       Applying is completely free. Once your application is reviewed and approved by WorkDen Admin,
-                      you can pay ₹99 to unlock and download your official ID Card.
+                      your official ID card will be issued in your portal.
                     </p>
                   </div>
 
@@ -1365,18 +1366,18 @@ export default function MemberDashboard({ user, onLogout }) {
                   </div>
                   {application && (
                     <>
-                      <div className="flex justify-between py-2 border-b border-[#252525]">
-                        <span className="text-[#777]">Payment Status (₹99)</span>
-                        <span className="text-[#F5C542] font-bold">
-                          {application.download_unlocked === 1
-                            ? 'Paid & Verified'
-                            : application.payment_status === 'PAID'
-                            ? 'Confirmation Submitted'
-                            : isApproved
-                            ? 'Pending Payment'
-                            : 'Not Applicable'}
-                        </span>
-                      </div>
+                      {isApproved && (
+                        <div className="flex justify-between py-2 border-b border-[#252525]">
+                          <span className="text-[#777]">Payment Status</span>
+                          <span className="text-[#F5C542] font-bold">
+                            {application.download_unlocked === 1
+                              ? 'Paid & Verified'
+                              : application.payment_status === 'PAID'
+                              ? 'Confirmation Submitted'
+                              : 'Pending Verification (₹99)'}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between py-2 border-b border-[#252525]">
                         <span className="text-[#777]">ID Card Download</span>
                         <span className="text-emerald-400 font-bold">

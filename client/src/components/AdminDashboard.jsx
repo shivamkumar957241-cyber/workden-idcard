@@ -21,25 +21,25 @@ import PaymentsView from './PaymentsView';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
 
 const NAV_SECTIONS = [
-  // 1. Dashboard
-  { id: 'overview', label: '1. Dashboard Overview', icon: TrendingUp, group: 'Main' },
+  // Dashboard
+  { id: 'overview', label: 'Dashboard Overview', icon: TrendingUp, group: 'Main' },
 
-  // 2. Member Management & Workflows
-  { id: 'member-management', label: '2. Member Management', icon: Users, group: 'Member Portal' },
-  { id: 'member-applications', label: '4. Member ID Applications', icon: FileText, group: 'Member Portal', badge: 'member_pending' },
-  { id: 'member-payments', label: '6. Member ID Card Payments', icon: CreditCard, group: 'Member Portal' },
-  { id: 'payment-approvals', label: '7. Payment Approvals', icon: Clock, group: 'Member Portal', badge: 'payment_pending' },
-  { id: 'member-downloads', label: '8. Member Card Downloads', icon: Layers, group: 'Member Portal' },
+  // Member Management & Workflows
+  { id: 'member-management', label: 'Member Management', icon: Users, group: 'Member Portal' },
+  { id: 'member-applications', label: 'Member ID Applications', icon: FileText, group: 'Member Portal', badge: 'member_pending' },
+  { id: 'member-payments', label: 'Member ID Card Payments', icon: CreditCard, group: 'Member Portal' },
+  { id: 'payment-approvals', label: 'Payment Approvals', icon: Clock, group: 'Member Portal', badge: 'payment_pending' },
+  { id: 'member-downloads', label: 'Member Card Downloads', icon: Layers, group: 'Member Portal' },
 
-  // 3. Staff Management & Workflows
-  { id: 'staff-management', label: '3. Staff Management', icon: Shield, group: 'Staff Portal' },
-  { id: 'staff-applications', label: '5. Staff ID Applications', icon: FileText, group: 'Staff Portal', badge: 'staff_pending' },
-  { id: 'staff-downloads', label: '9. Staff Card Downloads', icon: Layers, group: 'Staff Portal' },
+  // Staff Management & Workflows
+  { id: 'staff-management', label: 'Staff Management', icon: Shield, group: 'Staff Portal' },
+  { id: 'staff-applications', label: 'Staff ID Applications', icon: FileText, group: 'Staff Portal', badge: 'staff_pending' },
+  { id: 'staff-downloads', label: 'Staff Card Downloads', icon: Layers, group: 'Staff Portal' },
 
   // Operations, Reports & Config
-  { id: 'reports-stats', label: '10. Reports & Statistics', icon: QrCode, group: 'Operations' },
-  { id: 'notifications-audit', label: '11. Notifications & Audit Logs', icon: ShieldCheck, group: 'Operations' },
-  { id: 'design-settings', label: '12. Settings', icon: Settings, group: 'Configuration' },
+  { id: 'reports-stats', label: 'Reports & Statistics', icon: QrCode, group: 'Operations' },
+  { id: 'notifications-audit', label: 'Notifications & Audit Logs', icon: ShieldCheck, group: 'Operations' },
+  { id: 'design-settings', label: 'Settings', icon: Settings, group: 'Configuration' },
 ];
 
 export default function AdminDashboard({ user, onLogout }) {

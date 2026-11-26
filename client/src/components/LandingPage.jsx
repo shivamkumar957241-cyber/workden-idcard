@@ -75,7 +75,7 @@ export default function LandingPage() {
                 {[
                   'Free Application Submission',
                   'Admin Review & Verification',
-                  '₹99 Download Fee (After Approval)',
+                  'Instant Digital ID Issuance',
                   'QR Verified Digital ID Card'
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2.5">
@@ -125,8 +125,8 @@ export default function LandingPage() {
                 {[
                   'Free Staff ID Card Application',
                   'Document & Identity Verification',
-                  'Instant Free Direct Download',
-                  'Zero Payment Required'
+                  'Instant Direct Download',
+                  'Official Employee Credential'
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -158,7 +158,7 @@ export default function LandingPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-4xl mt-16 text-left">
           {[
             { title: 'Free Application', desc: 'No fee to apply or submit documents', icon: Sparkles },
-            { title: 'Razorpay Live', desc: '₹99 card fee exclusively for members', icon: Lock },
+            { title: 'Verified Identity', desc: 'Authentic WorkDen digital credential', icon: ShieldCheck },
             { title: 'Cryptographic QR', desc: 'Tamper-proof live identity check', icon: QrCode },
             { title: 'Print Ready PDF', desc: 'High-res export with precise dimensions', icon: Download }
           ].map(f => {
