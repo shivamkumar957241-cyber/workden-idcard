@@ -68,9 +68,9 @@ export default function UnifiedCardsTable({
         {/* Role Filter Pills */}
         <div className="flex items-center gap-1 bg-[#111] p-1 rounded-xl border border-[#2a2a2a] self-start">
           {[
-            { id: 'ALL', label: 'All' },
-            { id: 'USER', label: 'Members' },
-            { id: 'STAFF', label: 'Staff' }
+            { id: 'ALL', label: `All (${cards.length})` },
+            { id: 'USER', label: `Members (${cards.filter(c => c.profile_type === 'USER').length})` },
+            { id: 'STAFF', label: `Staff (${cards.filter(c => c.profile_type === 'STAFF').length})` }
           ].map(t => (
             <button
               key={t.id}

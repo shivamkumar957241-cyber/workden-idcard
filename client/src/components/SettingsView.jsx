@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   Palette,
@@ -6,7 +6,8 @@ import {
   Save,
   Trash2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  CreditCard
 } from 'lucide-react';
 
 export default function SettingsView({
@@ -20,19 +21,52 @@ export default function SettingsView({
   onDeleteDesignation
 }) {
   const [formData, setFormData] = useState({
-    company_name: settings?.company_name || 'WORKDEN',
-    company_tagline: settings?.company_tagline || 'OFFICIAL IDENTITY CARD',
+    company_name: settings?.company_name || 'WorkDen',
+    company_tagline: settings?.company_tagline || 'DIGITAL TASK PLATFORM • OFFICIAL CREDENTIAL',
     company_website: settings?.company_website || 'https://workden.online',
     official_email: settings?.official_email || 'support@workden.online',
-    office_address: settings?.office_address || 'WorkDen Tower, Plot 14, Sector 62, Noida, UP 201301',
+    office_address: settings?.office_address || 'MG Road, Ashok Nagar, Bangalore, Karnataka – 560001',
     authorized_signatory: settings?.authorized_signatory || 'Director of Operations',
     signature_image: settings?.signature_image || '/signature.png',
     primary_color: settings?.primary_color || '#0B0B0B',
     secondary_color: settings?.secondary_color || '#171717',
     accent_color: settings?.accent_color || '#F5C542',
-    card_usage_rules: settings?.card_usage_rules || '1. This credential is official property of WorkDen.\n2. Must be presented upon request to security personnel.\n3. Non-transferable and must be surrendered upon cessation.\n4. Misuse or tampering is strictly prohibited.',
-    lost_card_instructions: settings?.lost_card_instructions || 'If found, please immediately return to WorkDen Security or email support@workden.online / Call +91 9262725686'
+    card_usage_rules: settings?.card_usage_rules || '1. This credential is official property of WorkDen (workden.online).\n2. Must be presented upon request for platform identity verification.\n3. Non-transferable and valid for registered WorkDen access.\n4. Misuse or tampering is strictly prohibited.',
+    lost_card_instructions: settings?.lost_card_instructions || 'If found, please return to WorkDen or email support@workden.online / WhatsApp +91 92627 25686',
+    member_fee: settings?.member_fee ?? 99,
+    staff_fee: settings?.staff_fee ?? 249,
+    require_member_payment: settings?.require_member_payment !== 0,
+    require_staff_payment: settings?.require_staff_payment !== 0,
+    auto_unlock_on_payment: settings?.auto_unlock_on_payment !== 0,
+    razorpay_key_id: settings?.razorpay_key_id || 'rzp_live_U4VD9FTceH5P0x',
+    support_phone: settings?.support_phone || '+91 92627 25686'
   });
+
+  useEffect(() => {
+    if (settings) {
+      setFormData(prev => ({
+        ...prev,
+        company_name: settings.company_name || prev.company_name,
+        company_tagline: settings.company_tagline || prev.company_tagline,
+        company_website: settings.company_website || prev.company_website,
+        official_email: settings.official_email || prev.official_email,
+        office_address: settings.office_address || prev.office_address,
+        authorized_signatory: settings.authorized_signatory || prev.authorized_signatory,
+        primary_color: settings.primary_color || prev.primary_color,
+        secondary_color: settings.secondary_color || prev.secondary_color,
+        accent_color: settings.accent_color || prev.accent_color,
+        card_usage_rules: settings.card_usage_rules || prev.card_usage_rules,
+        lost_card_instructions: settings.lost_card_instructions || prev.lost_card_instructions,
+        member_fee: settings.member_fee ?? 99,
+        staff_fee: settings.staff_fee ?? 249,
+        require_member_payment: settings.require_member_payment !== 0,
+        require_staff_payment: settings.require_staff_payment !== 0,
+        auto_unlock_on_payment: settings.auto_unlock_on_payment !== 0,
+        razorpay_key_id: settings.razorpay_key_id || 'rzp_live_U4VD9FTceH5P0x',
+        support_phone: settings.support_phone || '+91 92627 25686'
+      }));
+    }
+  }, [settings]);
 
   const [newDeptName, setNewDeptName] = useState('');
   const [newDeptCode, setNewDeptCode] = useState('');
@@ -186,6 +220,96 @@ export default function SettingsView({
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-white placeholder-[#666] focus:outline-none focus:border-[#F5C542] focus:ring-1 focus:ring-[#F5C542] text-xs transition-all"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Section 1.5: Payment, Fees & Portal Controls */}
+        <div className="bg-[#171717] p-6 rounded-2xl border border-[#353535] shadow-xl space-y-5">
+          <div className="flex items-center gap-2 text-sm font-bold text-white border-b border-[#353535] pb-3">
+            <CreditCard className="w-4 h-4 text-[#F5C542]" />
+            <span>Payment, Fees & Portal Controls</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div>
+              <label className="block font-semibold text-[#B5B5B5] mb-1.5 uppercase tracking-wider text-[11px]">
+                Member Unlock Fee (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                name="member_fee"
+                value={formData.member_fee}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-[#F5C542] font-bold focus:outline-none focus:border-[#F5C542] text-xs transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-[#B5B5B5] mb-1.5 uppercase tracking-wider text-[11px]">
+                Staff Unlock Fee (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                name="staff_fee"
+                value={formData.staff_fee}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-emerald-400 font-bold focus:outline-none focus:border-[#F5C542] text-xs transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-[#B5B5B5] mb-1.5 uppercase tracking-wider text-[11px]">
+                Razorpay Live Key ID
+              </label>
+              <input
+                type="text"
+                name="razorpay_key_id"
+                value={formData.razorpay_key_id}
+                onChange={handleChange}
+                placeholder="rzp_live_..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-white font-mono focus:outline-none focus:border-[#F5C542] text-xs transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-[#B5B5B5] mb-1.5 uppercase tracking-wider text-[11px]">
+                Support Phone / WhatsApp
+              </label>
+              <input
+                type="text"
+                name="support_phone"
+                value={formData.support_phone}
+                onChange={handleChange}
+                placeholder="+91 92627 25686"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#353535] bg-[#222222] text-white focus:outline-none focus:border-[#F5C542] text-xs transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {[
+              { key: 'require_member_payment', label: 'Member Payment Required', desc: 'Require payment after approval to unlock Member ID card' },
+              { key: 'require_staff_payment', label: 'Staff Payment Required', desc: 'Require payment after approval to unlock Staff ID card' },
+              { key: 'auto_unlock_on_payment', label: 'Auto-Unlock on Payment', desc: 'Automatically unlock ID card download once Razorpay succeeds' }
+            ].map(toggle => (
+              <label
+                key={toggle.key}
+                className="flex items-start gap-3 p-3.5 rounded-xl bg-[#121212] border border-[#2a2a2a] hover:border-[#F5C542]/40 cursor-pointer transition"
+              >
+                <input
+                  type="checkbox"
+                  checked={!!formData[toggle.key]}
+                  onChange={e => setFormData(prev => ({ ...prev, [toggle.key]: e.target.checked }))}
+                  className="mt-0.5 rounded border-[#353535] bg-[#222] text-[#F5C542] focus:ring-0 cursor-pointer"
+                />
+                <div>
+                  <p className="text-white font-bold text-xs">{toggle.label}</p>
+                  <p className="text-[#777] text-[11px] mt-0.5 leading-snug">{toggle.desc}</p>
+                </div>
+              </label>
+            ))}
           </div>
         </div>
 

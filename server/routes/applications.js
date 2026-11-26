@@ -250,27 +250,32 @@ router.post('/:id/approve', requireAuth, requireAdmin, (req, res) => {
     const token = generateSecureToken();
     db.prepare('INSERT INTO qr_verification_tokens (card_id, token, is_active) VALUES (?, ?, 1)').run(cardId, token);
 
-    // Update application record (payment required after approval: ₹249 for STAFF, ₹99 for USER)
+    // Check dynamic payment settings from Admin Settings
+    const s = db.prepare('SELECT member_fee, staff_fee, require_member_payment, require_staff_payment FROM id_card_settings WHERE id = 1').get() || {};
+    const isStaffApp = app.application_type === 'STAFF';
+    const requiresPayment = isStaffApp ? (s.require_staff_payment !== 0) : (s.require_member_payment !== 0);
+    const feeRupees = isStaffApp ? (s.staff_fee ?? 249) : (s.member_fee ?? 99);
+
     db.prepare(`
       UPDATE id_applications 
       SET status = 'APPROVED', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP,
           profile_id = ?, card_id = ?, 
-          payment_status = 'PENDING',
-          download_unlocked = 0,
+          payment_status = ?,
+          download_unlocked = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(req.user.email, profileId, cardId, appId);
+    `).run(req.user.email, profileId, cardId, requiresPayment ? 'PENDING' : 'NOT_REQUIRED', requiresPayment ? 0 : 1, appId);
 
     // History
     db.prepare("INSERT INTO id_card_history (card_id, action, details, performed_by) VALUES (?, 'APPROVED', 'ID Card approved via application workflow', ?)").run(cardId, req.user.email);
 
     // Notify user
-    const notifTitle = app.application_type === 'STAFF'
+    const notifTitle = isStaffApp
       ? '✅ Staff ID Card Approved!'
       : '✅ Member ID Card Application Approved!';
-    const notifMsg = app.application_type === 'STAFF'
-      ? `Your Staff ID Card (${entityCode}) has been approved! Please pay ₹249 to unlock your ID Card download.`
-      : `Your Member ID Card application has been approved! Please pay ₹99 to unlock your ID Card download.`;
+    const notifMsg = !requiresPayment
+      ? `Your ${isStaffApp ? 'Staff' : 'Member'} ID Card (${entityCode}) has been approved and is ready for download!`
+      : `Your ${isStaffApp ? 'Staff' : 'Member'} ID Card (${entityCode}) has been approved! Please pay ₹${feeRupees} to unlock your ID Card download.`;
     createNotification(app.applicant_user_id, notifTitle, notifMsg, 'SUCCESS');
 
     logAudit('APPLICATION_APPROVE', req.user.email, 'APPLICATION', appId,

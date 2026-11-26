@@ -345,6 +345,14 @@ function initDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    const settingsCols = db.prepare("PRAGMA table_info(id_card_settings)").all().map(c => c.name);
+    if (!settingsCols.includes('member_fee')) db.exec("ALTER TABLE id_card_settings ADD COLUMN member_fee INTEGER DEFAULT 99;");
+    if (!settingsCols.includes('staff_fee')) db.exec("ALTER TABLE id_card_settings ADD COLUMN staff_fee INTEGER DEFAULT 249;");
+    if (!settingsCols.includes('require_member_payment')) db.exec("ALTER TABLE id_card_settings ADD COLUMN require_member_payment INTEGER DEFAULT 1;");
+    if (!settingsCols.includes('require_staff_payment')) db.exec("ALTER TABLE id_card_settings ADD COLUMN require_staff_payment INTEGER DEFAULT 1;");
+    if (!settingsCols.includes('auto_unlock_on_payment')) db.exec("ALTER TABLE id_card_settings ADD COLUMN auto_unlock_on_payment INTEGER DEFAULT 1;");
+    if (!settingsCols.includes('razorpay_key_id')) db.exec("ALTER TABLE id_card_settings ADD COLUMN razorpay_key_id TEXT DEFAULT 'rzp_live_U4VD9FTceH5P0x';");
+    if (!settingsCols.includes('support_phone')) db.exec("ALTER TABLE id_card_settings ADD COLUMN support_phone TEXT DEFAULT '+91 92627 25686';");
   } catch (migErr) {
     console.error('Migration error:', migErr);
   }

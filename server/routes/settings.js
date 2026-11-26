@@ -23,14 +23,16 @@ router.get('/', (req, res) => {
   }
 });
 
-// PUT /api/settings - Update ID Card Design Settings
+// PUT /api/settings - Update ID Card Design, Payment & Portal Settings
 router.put('/', (req, res) => {
   try {
     const {
       company_name, company_tagline, company_logo, company_website,
       official_email, office_address, authorized_signatory, signature_image,
       primary_color, secondary_color, accent_color,
-      card_usage_rules, lost_card_instructions, qr_position
+      card_usage_rules, lost_card_instructions, qr_position,
+      member_fee, staff_fee, require_member_payment, require_staff_payment,
+      auto_unlock_on_payment, razorpay_key_id, support_phone
     } = req.body;
 
     db.prepare(`
@@ -50,18 +52,32 @@ router.put('/', (req, res) => {
         card_usage_rules = COALESCE(?, card_usage_rules),
         lost_card_instructions = COALESCE(?, lost_card_instructions),
         qr_position = COALESCE(?, qr_position),
+        member_fee = COALESCE(?, member_fee),
+        staff_fee = COALESCE(?, staff_fee),
+        require_member_payment = COALESCE(?, require_member_payment),
+        require_staff_payment = COALESCE(?, require_staff_payment),
+        auto_unlock_on_payment = COALESCE(?, auto_unlock_on_payment),
+        razorpay_key_id = COALESCE(?, razorpay_key_id),
+        support_phone = COALESCE(?, support_phone),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = 1
     `).run(
-      company_name, company_tagline, company_logo, company_website,
-      official_email, office_address, authorized_signatory, signature_image,
-      primary_color, secondary_color, accent_color,
-      card_usage_rules, lost_card_instructions, qr_position
+      company_name ?? null, company_tagline ?? null, company_logo ?? null, company_website ?? null,
+      official_email ?? null, office_address ?? null, authorized_signatory ?? null, signature_image ?? null,
+      primary_color ?? null, secondary_color ?? null, accent_color ?? null,
+      card_usage_rules ?? null, lost_card_instructions ?? null, qr_position ?? null,
+      member_fee !== undefined ? parseInt(member_fee, 10) : null,
+      staff_fee !== undefined ? parseInt(staff_fee, 10) : null,
+      require_member_payment !== undefined ? (require_member_payment ? 1 : 0) : null,
+      require_staff_payment !== undefined ? (require_staff_payment ? 1 : 0) : null,
+      auto_unlock_on_payment !== undefined ? (auto_unlock_on_payment ? 1 : 0) : null,
+      razorpay_key_id ?? null,
+      support_phone ?? null
     );
 
-    logAudit('UPDATE_SETTINGS', 'Admin', 'SETTINGS', '1', 'ID Card Design and Branding Settings updated.');
+    logAudit('UPDATE_SETTINGS', 'Admin', 'SETTINGS', '1', 'Portal, Payment, and ID Card Settings updated.');
 
-    res.json({ success: true, message: 'ID Card Design Settings updated successfully' });
+    res.json({ success: true, message: 'All Portal & ID Card Settings updated successfully' });
   } catch (err) {
     console.error('Error updating settings:', err);
     res.status(500).json({ success: false, error: err.message });

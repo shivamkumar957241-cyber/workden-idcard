@@ -33,7 +33,6 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (typeFilter !== 'ALL') params.set('application_type', typeFilter);
       const res = await authFetch(`/api/applications?${params}`);
       const json = await res.json();
@@ -44,7 +43,7 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
 
   useEffect(() => {
     fetchApplications();
-  }, [statusFilter, typeFilter]);
+  }, [typeFilter]);
 
   const handleApprove = async (appId) => {
     setProcessing(true);

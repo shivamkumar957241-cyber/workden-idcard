@@ -5,12 +5,20 @@ const crypto = require('crypto');
 const { db, logAudit, createNotification } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 
-const MEMBER_PAYMENT_AMOUNT = 9900; // ₹99 in paise
-const STAFF_PAYMENT_AMOUNT = 24900; // ₹249 in paise
+function getPortalSettings() {
+  try {
+    return db.prepare('SELECT * FROM id_card_settings WHERE id = 1').get() || {};
+  } catch {
+    return {};
+  }
+}
 
 function getPaymentAmount(appOrRole) {
+  const s = getPortalSettings();
+  const memberRupees = parseInt(s.member_fee, 10) > 0 ? parseInt(s.member_fee, 10) : 99;
+  const staffRupees = parseInt(s.staff_fee, 10) > 0 ? parseInt(s.staff_fee, 10) : 249;
   const isStaff = appOrRole?.application_type === 'STAFF' || appOrRole === 'STAFF';
-  return isStaff ? STAFF_PAYMENT_AMOUNT : MEMBER_PAYMENT_AMOUNT;
+  return (isStaff ? staffRupees : memberRupees) * 100;
 }
 
 // POST /api/payments/create-order
@@ -43,7 +51,8 @@ router.post('/create-order', requireAuth, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Payment already completed for this application.' });
     }
 
-    const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_live_U4VD9FTceH5P0x';
+    const portalSettings = getPortalSettings();
+    const keyId = portalSettings.razorpay_key_id || process.env.RAZORPAY_KEY_ID || 'rzp_live_U4VD9FTceH5P0x';
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     let orderId = null;
 
@@ -167,12 +176,19 @@ router.post('/verify', requireAuth, (req, res) => {
       payOrder = { id: ins.lastInsertRowid, amount: expectedAmount, razorpay_order_id: resolvedOrderId };
     }
 
-    // Automatically unlock ID card download upon verified Razorpay payment
-    if (application_id) {
-      db.prepare("UPDATE id_applications SET payment_status = 'VERIFIED', download_unlocked = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .run(application_id);
+    // Check auto-unlock setting from Admin Settings
+    const portalSettings = getPortalSettings();
+    const autoUnlock = portalSettings.auto_unlock_on_payment !== 0;
 
-      // Record auto-verified payment confirmation for Admin Panel history
+    if (application_id) {
+      if (autoUnlock) {
+        db.prepare("UPDATE id_applications SET payment_status = 'VERIFIED', download_unlocked = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+          .run(application_id);
+      } else {
+        db.prepare("UPDATE id_applications SET payment_status = 'PAID', download_unlocked = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+          .run(application_id);
+      }
+
       const existingConf = db.prepare('SELECT id FROM payment_confirmations WHERE payment_order_id = ?').get(payOrder.id);
       if (!existingConf) {
         const cardRow = appRowForAmt?.card_id ? db.prepare('SELECT entity_code FROM id_card_records WHERE id = ?').get(appRowForAmt.card_id) : null;
@@ -180,14 +196,17 @@ router.post('/verify', requireAuth, (req, res) => {
           INSERT INTO payment_confirmations
             (application_id, applicant_user_id, payment_order_id, member_name, member_id,
              razorpay_payment_id, razorpay_order_id, amount, payment_date, status, reviewed_by, reviewed_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'APPROVED', 'Razorpay Auto-Verify', CURRENT_TIMESTAMP)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           application_id, userId, payOrder.id,
           appRowForAmt?.full_name || req.user.full_name,
           cardRow?.entity_code || null,
           razorpay_payment_id, resolvedOrderId,
           payOrder.amount || expectedAmount,
-          new Date().toISOString()
+          new Date().toISOString(),
+          autoUnlock ? 'APPROVED' : 'SUBMITTED',
+          autoUnlock ? 'Razorpay Auto-Verify' : null,
+          autoUnlock ? new Date().toISOString() : null
         );
       }
     }
@@ -275,7 +294,7 @@ router.post('/submit-confirmation', requireAuth, (req, res) => {
       app?.full_name || req.user.full_name,
       memberIdRow?.entity_code || null,
       razorpay_payment_id, orderIdToSave,
-      amount || payOrder.amount || MEMBER_PAYMENT_AMOUNT,
+      amount || payOrder.amount || getPaymentAmount(req.user.role),
       payment_date || new Date().toISOString()
     );
 

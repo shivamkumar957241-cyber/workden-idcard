@@ -36,7 +36,6 @@ export default function PaymentsView({ initialStatus = 'ALL', initialType = 'ALL
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (typeFilter !== 'ALL') params.set('type', typeFilter);
       if (search.trim()) params.set('search', search.trim());
       const res = await authFetch(`/api/payments/all?${params}`);
@@ -53,7 +52,7 @@ export default function PaymentsView({ initialStatus = 'ALL', initialType = 'ALL
 
   useEffect(() => {
     fetchPayments();
-  }, [statusFilter, typeFilter]);
+  }, [typeFilter]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -106,6 +105,7 @@ export default function PaymentsView({ initialStatus = 'ALL', initialType = 'ALL
   const submittedCount = payments.filter(p => p.status === 'SUBMITTED').length;
   const approvedCount = payments.filter(p => p.status === 'APPROVED').length;
   const rejectedCount = payments.filter(p => p.status === 'REJECTED').length;
+  const displayedPayments = statusFilter === 'ALL' ? payments : payments.filter(p => p.status === statusFilter);
 
   return (
     <div className="space-y-6">
@@ -221,19 +221,22 @@ export default function PaymentsView({ initialStatus = 'ALL', initialType = 'ALL
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            {['ALL', 'SUBMITTED', 'APPROVED', 'REJECTED'].map(s => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  statusFilter === s
-                    ? 'bg-[#F5C542] text-black shadow-md shadow-[#F5C542]/20'
-                    : 'bg-[#222] text-[#888] hover:text-white hover:bg-[#2a2a2a]'
-                }`}
-              >
-                {s === 'ALL' ? 'All Status' : s === 'SUBMITTED' ? 'Pending Review' : s}
-              </button>
-            ))}
+            {['ALL', 'SUBMITTED', 'APPROVED', 'REJECTED'].map(s => {
+              const cnt = s === 'ALL' ? payments.length : s === 'SUBMITTED' ? submittedCount : s === 'APPROVED' ? approvedCount : rejectedCount;
+              return (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    statusFilter === s
+                      ? 'bg-[#F5C542] text-black shadow-md shadow-[#F5C542]/20'
+                      : 'bg-[#222] text-[#888] hover:text-white hover:bg-[#2a2a2a]'
+                  }`}
+                >
+                  {s === 'ALL' ? `All (${cnt})` : s === 'SUBMITTED' ? `Pending Review (${cnt})` : `${s} (${cnt})`}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -254,7 +257,7 @@ export default function PaymentsView({ initialStatus = 'ALL', initialType = 'ALL
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 text-[#F5C542] animate-spin" />
         </div>
-      ) : payments.length === 0 ? (
+      ) : displayedPayments.length === 0 ? (
         <div className="bg-[#171717] border border-[#353535] rounded-2xl p-12 text-center">
           <CreditCard className="w-12 h-12 text-[#444] mx-auto mb-3" />
           <h3 className="text-white font-bold text-sm">No payment confirmations found</h3>
@@ -280,7 +283,7 @@ export default function PaymentsView({ initialStatus = 'ALL', initialType = 'ALL
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#2a2a2a]">
-                {payments.map(p => {
+                {displayedPayments.map(p => {
                   const isSubmitted = p.status === 'SUBMITTED';
                   const isApproved = p.status === 'APPROVED';
                   const isRejected = p.status === 'REJECTED';
