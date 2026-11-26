@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db, generateStaffId, generateUserIdCode, generateSecureToken, logAudit, createNotification } = require('../db');
+const { db, generateStaffId, generateUserIdCode, generateSecureToken, logAudit, createNotification, purgeApplicationsAndCards } = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 // POST /api/applications - Submit a new ID card application
@@ -327,22 +327,17 @@ router.delete('/:id', requireAuth, requireAdmin, (req, res) => {
     if (!app) return res.status(404).json({ success: false, error: 'Application not found.' });
 
     db.transaction(() => {
-      // If card was issued, clean up card as well
-      if (app.card_id) {
-        db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(app.card_id);
-        db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(app.card_id);
-        db.prepare('DELETE FROM id_card_records WHERE id = ?').run(app.card_id);
-      }
+      purgeApplicationsAndCards({
+        appIds: [appId],
+        cardIds: app.card_id ? [app.card_id] : [],
+        emails: app.email ? [app.email] : []
+      });
       if (app.profile_id) {
         if (app.application_type === 'STAFF') {
           db.prepare('DELETE FROM staff_profiles WHERE id = ?').run(app.profile_id);
         } else if (app.application_type === 'USER') {
           db.prepare('DELETE FROM user_id_profiles WHERE id = ?').run(app.profile_id);
         }
-      }
-      db.prepare('DELETE FROM id_applications WHERE id = ?').run(appId);
-      if (app.email) {
-        db.prepare("DELETE FROM auth_users WHERE email = ? AND role != 'ADMIN'").run(app.email);
       }
       logAudit('APPLICATION_DELETE', req.user.email, 'APPLICATION', appId, `Permanently purged application for ${app.full_name}`, req.ip);
     })();

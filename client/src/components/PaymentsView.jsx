@@ -7,16 +7,25 @@ import {
 import { authFetch } from '../api';
 import { formatDateIST, formatIST } from '../utils/date';
 
-export default function PaymentsView({ initialStatus = 'ALL', onPaymentApproved }) {
+export default function PaymentsView({ initialStatus = 'ALL', initialType = 'ALL', onPaymentApproved }) {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [typeFilter, setTypeFilter] = useState(initialType);
   const [search, setSearch] = useState('');
   const [processingId, setProcessingId] = useState(null);
   const [rejectModalId, setRejectModalId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [toast, setToast] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
+
+  useEffect(() => {
+    setStatusFilter(initialStatus);
+  }, [initialStatus]);
+
+  useEffect(() => {
+    setTypeFilter(initialType);
+  }, [initialType]);
 
   const showMsg = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -28,6 +37,7 @@ export default function PaymentsView({ initialStatus = 'ALL', onPaymentApproved 
     try {
       const params = new URLSearchParams();
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
+      if (typeFilter !== 'ALL') params.set('type', typeFilter);
       if (search.trim()) params.set('search', search.trim());
       const res = await authFetch(`/api/payments/all?${params}`);
       const json = await res.json();
@@ -43,7 +53,7 @@ export default function PaymentsView({ initialStatus = 'ALL', onPaymentApproved 
 
   useEffect(() => {
     fetchPayments();
-  }, [statusFilter]);
+  }, [statusFilter, typeFilter]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -114,10 +124,14 @@ export default function PaymentsView({ initialStatus = 'ALL', onPaymentApproved 
         <div>
           <h2 className="text-white font-extrabold text-xl flex items-center gap-2">
             <CreditCard className="w-6 h-6 text-[#F5C542]" />
-            Member ID Card Payments (₹99)
+            {typeFilter === 'STAFF'
+              ? 'Staff ID Card Payments (₹249)'
+              : typeFilter === 'USER'
+              ? 'Member ID Card Payments (₹99)'
+              : 'All ID Card Payments (Member ₹99 & Staff ₹249)'}
           </h2>
           <p className="text-[#888] text-xs mt-1">
-            Review Razorpay live payment confirmations submitted by Members to unlock their ID card downloads.
+            Review Razorpay live payment records for both Members and Staff ID card downloads.
           </p>
         </div>
         <button
@@ -160,7 +174,9 @@ export default function PaymentsView({ initialStatus = 'ALL', onPaymentApproved 
             </div>
           </div>
           <p className="text-2xl font-black text-emerald-400 mt-2">{approvedCount}</p>
-          <p className="text-[11px] text-[#777] mt-0.5">₹{(approvedCount * 99).toLocaleString()} collected</p>
+          <p className="text-[11px] text-[#777] mt-0.5">
+            ₹{payments.filter(p => p.status === 'APPROVED').reduce((s, p) => s + Math.round((p.amount || 9900) / 100), 0).toLocaleString()} collected
+          </p>
         </div>
 
         <div
@@ -181,21 +197,44 @@ export default function PaymentsView({ initialStatus = 'ALL', onPaymentApproved 
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#171717] border border-[#353535] rounded-2xl p-3">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {['ALL', 'SUBMITTED', 'APPROVED', 'REJECTED'].map(s => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                statusFilter === s
-                  ? 'bg-[#F5C542] text-black shadow-md shadow-[#F5C542]/20'
-                  : 'bg-[#222] text-[#888] hover:text-white hover:bg-[#2a2a2a]'
-              }`}
-            >
-              {s === 'ALL' ? 'All Payments' : s === 'SUBMITTED' ? 'Pending Review' : s}
-            </button>
-          ))}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-[#171717] border border-[#353535] rounded-2xl p-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Role Type Filter */}
+          <div className="flex items-center gap-1 bg-[#111] p-1 rounded-xl border border-[#2a2a2a]">
+            {[
+              { id: 'ALL', label: 'All' },
+              { id: 'USER', label: 'Member (₹99)' },
+              { id: 'STAFF', label: 'Staff (₹249)' }
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTypeFilter(t.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  typeFilter === t.id
+                    ? 'bg-emerald-500 text-black shadow-sm'
+                    : 'text-[#888] hover:text-white'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {['ALL', 'SUBMITTED', 'APPROVED', 'REJECTED'].map(s => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  statusFilter === s
+                    ? 'bg-[#F5C542] text-black shadow-md shadow-[#F5C542]/20'
+                    : 'bg-[#222] text-[#888] hover:text-white hover:bg-[#2a2a2a]'
+                }`}
+              >
+                {s === 'ALL' ? 'All Status' : s === 'SUBMITTED' ? 'Pending Review' : s}
+              </button>
+            ))}
+          </div>
         </div>
 
         <form onSubmit={handleSearchSubmit} className="relative min-w-[240px]">
@@ -254,7 +293,16 @@ export default function PaymentsView({ initialStatus = 'ALL', onPaymentApproved 
                             {p.member_name?.[0] || 'M'}
                           </div>
                           <div>
-                            <p className="text-white font-bold">{p.member_name || p.applicant_name}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-white font-bold">{p.member_name || p.applicant_name}</p>
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${
+                                p.application_type === 'STAFF'
+                                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                  : 'bg-[#F5C542]/15 text-[#F5C542] border border-[#F5C542]/30'
+                              }`}>
+                                {p.application_type === 'STAFF' ? 'STAFF' : 'MEMBER'}
+                              </span>
+                            </div>
                             <p className="text-[#777] text-[11px]">{p.user_email || p.app_email}</p>
                             {p.member_id && (
                               <span className="inline-block mt-0.5 text-[10px] font-mono text-[#F5C542]">

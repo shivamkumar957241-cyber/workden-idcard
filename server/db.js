@@ -561,6 +561,63 @@ function createNotification(userId, title, message, type = 'INFO') {
   }
 }
 
+// FK-safe cascade purge for applications, payment records, cards, and non-admin auth accounts
+function purgeApplicationsAndCards({ appIds = [], cardIds = [], emails = [], authUserIds = [] }) {
+  const uniqueAppIds = [...new Set(appIds.filter(Boolean))];
+  const uniqueCardIds = [...new Set(cardIds.filter(Boolean))];
+  const uniqueEmails = [...new Set(emails.filter(Boolean))];
+  const uniqueUserIds = [...new Set(authUserIds.filter(Boolean))];
+
+  // Also collect linked authUserIds from emails (excluding ADMIN)
+  for (const em of uniqueEmails) {
+    const u = db.prepare("SELECT id FROM auth_users WHERE email = ? AND role != 'ADMIN'").get(em);
+    if (u && !uniqueUserIds.includes(u.id)) uniqueUserIds.push(u.id);
+  }
+
+  // Also collect all apps linked to those userIds or cardIds
+  for (const cid of uniqueCardIds) {
+    const rows = db.prepare('SELECT id, applicant_user_id FROM id_applications WHERE card_id = ?').all(cid);
+    for (const r of rows) {
+      if (!uniqueAppIds.includes(r.id)) uniqueAppIds.push(r.id);
+    }
+  }
+  for (const uid of uniqueUserIds) {
+    const rows = db.prepare('SELECT id, card_id FROM id_applications WHERE applicant_user_id = ?').all(uid);
+    for (const r of rows) {
+      if (!uniqueAppIds.includes(r.id)) uniqueAppIds.push(r.id);
+      if (r.card_id && !uniqueCardIds.includes(r.card_id)) uniqueCardIds.push(r.card_id);
+    }
+  }
+
+  // 1. Delete payment_confirmations & payment_orders first (child of id_applications & auth_users)
+  for (const aid of uniqueAppIds) {
+    db.prepare('DELETE FROM payment_confirmations WHERE application_id = ?').run(aid);
+    db.prepare('DELETE FROM payment_orders WHERE application_id = ?').run(aid);
+  }
+  for (const uid of uniqueUserIds) {
+    db.prepare('DELETE FROM payment_confirmations WHERE applicant_user_id = ?').run(uid);
+    db.prepare('DELETE FROM payment_orders WHERE applicant_user_id = ?').run(uid);
+    db.prepare('DELETE FROM notifications WHERE user_id = ?').run(uid);
+  }
+
+  // 2. Delete id_applications BEFORE deleting id_card_records or auth_users
+  for (const aid of uniqueAppIds) {
+    db.prepare('DELETE FROM id_applications WHERE id = ?').run(aid);
+  }
+
+  // 3. Delete QR tokens, history, and card records
+  for (const cid of uniqueCardIds) {
+    db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(cid);
+    db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(cid);
+    db.prepare('DELETE FROM id_card_records WHERE id = ?').run(cid);
+  }
+
+  // 4. Delete non-admin auth_users
+  for (const uid of uniqueUserIds) {
+    db.prepare("DELETE FROM auth_users WHERE id = ? AND role != 'ADMIN'").run(uid);
+  }
+}
+
 try {
   db = openDatabaseConnection();
   initDatabase();
@@ -600,5 +657,6 @@ module.exports = {
   logAudit,
   updateExpiredCards,
   checkpointAndClose,
-  createNotification
+  createNotification,
+  purgeApplicationsAndCards
 };

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { db, generateStaffId, generateSecureToken, logAudit, updateExpiredCards } = require('../db');
+const { db, generateStaffId, generateSecureToken, logAudit, updateExpiredCards, purgeApplicationsAndCards } = require('../db');
 
 // GET /api/staff - List staff profiles with search & filters
 router.get('/', (req, res) => {
@@ -631,15 +631,13 @@ router.delete('/:id', (req, res) => {
 
     db.transaction(() => {
       const cards = db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").all(staffId);
-      for (const c of cards) {
-        db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(c.id);
-        db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(c.id);
-        db.prepare('DELETE FROM id_applications WHERE card_id = ?').run(c.id);
-      }
-      db.prepare("DELETE FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").run(staffId);
-      db.prepare("DELETE FROM id_applications WHERE application_type = 'STAFF' AND (email = ? OR mobile = ? OR profile_id = ?)").run(staff.email, staff.mobile, staffId);
+      const apps = db.prepare("SELECT id FROM id_applications WHERE application_type = 'STAFF' AND (email = ? OR mobile = ? OR profile_id = ?)").all(staff.email, staff.mobile, staffId);
+      purgeApplicationsAndCards({
+        appIds: apps.map(a => a.id),
+        cardIds: cards.map(c => c.id),
+        emails: [staff.email]
+      });
       db.prepare('DELETE FROM staff_profiles WHERE id = ?').run(staffId);
-      db.prepare("DELETE FROM auth_users WHERE email = ? AND role != 'ADMIN'").run(staff.email);
       logAudit('STAFF_DELETED', req.user?.email || 'Admin', 'STAFF', staffId, `Permanently purged staff ${staff.full_name} (${staff.staff_id}) from database`, req.ip);
     })();
 

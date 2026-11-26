@@ -239,8 +239,16 @@ async function runTests() {
     }
     console.log('✅ Role-based access control strictly enforced (Member blocked from admin endpoints).');
 
+    // 11. FK-safe Permanent Delete for Member & Staff with Payments
+    console.log('\n[TEST 11] FK-Safe Permanent Delete (Member & Staff with Payments)...');
+    const delMemberRes = await request('DELETE', `/api/applications/${memberAppId}`, null, adminToken);
+    if (!delMemberRes.body.success) throw new Error('Member delete failed: ' + JSON.stringify(delMemberRes.body));
+    const delStaffRes = await request('DELETE', `/api/applications/${staffAppId}`, null, adminToken);
+    if (!delStaffRes.body.success) throw new Error('Staff delete failed: ' + JSON.stringify(delStaffRes.body));
+    console.log('✅ Member and Staff (with payment orders & confirmations) deleted cleanly without FK errors!');
+
     console.log('\n========================================================');
-    console.log('🎉 ALL 10 TESTS PASSED WITH 100% SUCCESS!');
+    console.log('🎉 ALL 11 TESTS PASSED WITH 100% SUCCESS!');
     console.log('========================================================\n');
   } finally {
     // Cleanup test data from DB

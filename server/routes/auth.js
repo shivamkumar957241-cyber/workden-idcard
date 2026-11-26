@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const { db, logAudit } = require('../db');
+const { db, logAudit, purgeApplicationsAndCards } = require('../db');
 const { signToken, requireAuth, requireAdmin } = require('../middleware/auth');
 
 // POST /api/auth/login
@@ -220,43 +220,27 @@ router.delete('/accounts/:id', requireAuth, requireAdmin, (req, res) => {
     }
 
     db.transaction(() => {
-      // 1. Find all applications by email or applicant_user_id
       const apps = db.prepare('SELECT id, card_id FROM id_applications WHERE email = ? OR applicant_user_id = ?').all(targetUser.email, targetUserId);
-      for (const a of apps) {
-        if (a.card_id) {
-          db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(a.card_id);
-          db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(a.card_id);
-          db.prepare('DELETE FROM id_card_records WHERE id = ?').run(a.card_id);
-        }
-      }
-      db.prepare('DELETE FROM id_applications WHERE email = ? OR applicant_user_id = ?').run(targetUser.email, targetUserId);
+      const cardIds = apps.map(a => a.card_id).filter(Boolean);
 
-      // 2. Delete from staff_profiles if email matches
       const staff = db.prepare('SELECT id FROM staff_profiles WHERE email = ?').all(targetUser.email);
       for (const s of staff) {
-        const cList = db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").all(s.id);
-        for (const c of cList) {
-          db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(c.id);
-          db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(c.id);
-          db.prepare('DELETE FROM id_card_records WHERE id = ?').run(c.id);
-        }
-        db.prepare('DELETE FROM staff_profiles WHERE id = ?').run(s.id);
+        db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'STAFF' AND profile_id = ?").all(s.id).forEach(c => cardIds.push(c.id));
       }
-
-      // 3. Delete from user_id_profiles if email matches
       const userProfs = db.prepare('SELECT id FROM user_id_profiles WHERE email = ?').all(targetUser.email);
       for (const u of userProfs) {
-        const cList = db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'USER' AND profile_id = ?").all(u.id);
-        for (const c of cList) {
-          db.prepare('DELETE FROM qr_verification_tokens WHERE card_id = ?').run(c.id);
-          db.prepare('DELETE FROM id_card_history WHERE card_id = ?').run(c.id);
-          db.prepare('DELETE FROM id_card_records WHERE id = ?').run(c.id);
-        }
-        db.prepare('DELETE FROM user_id_profiles WHERE id = ?').run(u.id);
+        db.prepare("SELECT id FROM id_card_records WHERE profile_type = 'USER' AND profile_id = ?").all(u.id).forEach(c => cardIds.push(c.id));
       }
 
-      // 4. Finally delete from auth_users
-      db.prepare('DELETE FROM auth_users WHERE id = ?').run(targetUserId);
+      purgeApplicationsAndCards({
+        appIds: apps.map(a => a.id),
+        cardIds,
+        emails: [targetUser.email],
+        authUserIds: [targetUserId]
+      });
+
+      for (const s of staff) db.prepare('DELETE FROM staff_profiles WHERE id = ?').run(s.id);
+      for (const u of userProfs) db.prepare('DELETE FROM user_id_profiles WHERE id = ?').run(u.id);
 
       logAudit('ACCOUNT_PURGED', req.user.email, 'AUTH', targetUserId,
         `Permanently purged account and all linked data for ${targetUser.full_name} (${targetUser.email})`, req.ip);

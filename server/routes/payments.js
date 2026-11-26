@@ -329,13 +329,13 @@ router.get('/my-status/:application_id', requireAuth, (req, res) => {
   }
 });
 
-// GET /api/payments/all (Admin)
+// GET /api/payments/all (Admin) - Supports Member & Staff payments together with type filter
 router.get('/all', requireAuth, (req, res) => {
   try {
     if (req.user.role !== 'ADMIN') return res.status(403).json({ success: false, error: 'Admin access required.' });
-    const { status, search, page = 1, limit = 50 } = req.query;
+    const { status, type, search, page = 1, limit = 50 } = req.query;
     let query = `
-      SELECT pc.*, u.email as user_email, a.full_name as applicant_name, a.mobile, a.email as app_email
+      SELECT pc.*, u.email as user_email, a.full_name as applicant_name, a.mobile, a.email as app_email, a.application_type
       FROM payment_confirmations pc
       JOIN auth_users u ON u.id = pc.applicant_user_id
       JOIN id_applications a ON a.id = pc.application_id
@@ -343,10 +343,11 @@ router.get('/all', requireAuth, (req, res) => {
     `;
     const params = [];
     if (status && status !== 'ALL') { query += ' AND pc.status = ?'; params.push(status); }
+    if (type && (type === 'USER' || type === 'STAFF')) { query += ' AND a.application_type = ?'; params.push(type); }
     if (search) {
-      query += ' AND (pc.member_name LIKE ? OR pc.razorpay_payment_id LIKE ? OR u.email LIKE ?)';
+      query += ' AND (pc.member_name LIKE ? OR pc.member_id LIKE ? OR pc.razorpay_payment_id LIKE ? OR u.email LIKE ?)';
       const t = `%${search}%`;
-      params.push(t, t, t);
+      params.push(t, t, t, t);
     }
     const total = db.prepare(`SELECT COUNT(*) as c FROM (${query})`).get(...params).c;
     query += ' ORDER BY pc.created_at DESC LIMIT ? OFFSET ?';

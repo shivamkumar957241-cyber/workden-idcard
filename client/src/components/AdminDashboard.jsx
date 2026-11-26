@@ -28,17 +28,19 @@ const NAV_SECTIONS = [
   { id: 'member-management', label: 'Member Management', icon: Users, group: 'Member Portal' },
   { id: 'member-applications', label: 'Member ID Applications', icon: FileText, group: 'Member Portal', badge: 'member_pending' },
   { id: 'member-payments', label: 'Member ID Card Payments', icon: CreditCard, group: 'Member Portal' },
-  { id: 'payment-approvals', label: 'Payment Approvals', icon: Clock, group: 'Member Portal', badge: 'payment_pending' },
   { id: 'member-downloads', label: 'Member Card Downloads', icon: Layers, group: 'Member Portal' },
 
   // Staff Management & Workflows
   { id: 'staff-management', label: 'Staff Management', icon: Shield, group: 'Staff Portal' },
   { id: 'staff-applications', label: 'Staff ID Applications', icon: FileText, group: 'Staff Portal', badge: 'staff_pending' },
+  { id: 'staff-payments', label: 'Staff ID Card Payments', icon: CreditCard, group: 'Staff Portal' },
   { id: 'staff-downloads', label: 'Staff Card Downloads', icon: Layers, group: 'Staff Portal' },
 
-  // Operations, Reports & Config
-  { id: 'reports-stats', label: 'Reports & Statistics', icon: QrCode, group: 'Operations' },
-  { id: 'notifications-audit', label: 'Notifications & Audit Logs', icon: ShieldCheck, group: 'Operations' },
+  // Payments & Operations
+  { id: 'all-payments', label: 'All Payments (Member & Staff)', icon: CreditCard, group: 'Payments & Operations' },
+  { id: 'payment-approvals', label: 'Payment Approvals', icon: Clock, group: 'Payments & Operations', badge: 'payment_pending' },
+  { id: 'reports-stats', label: 'Reports & Statistics', icon: QrCode, group: 'Payments & Operations' },
+  { id: 'notifications-audit', label: 'Notifications & Audit Logs', icon: ShieldCheck, group: 'Payments & Operations' },
   { id: 'design-settings', label: 'Settings', icon: Settings, group: 'Configuration' },
 ];
 
@@ -277,19 +279,42 @@ export default function AdminDashboard({ user, onLogout }) {
         );
 
       // 6. Member ID Card Payments
+      // Member ID Card Payments
       case 'member-payments':
         return (
           <PaymentsView
             initialStatus="ALL"
+            initialType="USER"
             onPaymentApproved={() => { fetchAllCards(); showToast('Payment verified & download unlocked!'); }}
           />
         );
 
-      // 7. Payment Confirmation Approvals
+      // Staff ID Card Payments
+      case 'staff-payments':
+        return (
+          <PaymentsView
+            initialStatus="ALL"
+            initialType="STAFF"
+            onPaymentApproved={() => { fetchAllCards(); showToast('Staff payment verified & download unlocked!'); }}
+          />
+        );
+
+      // All Payments (Member & Staff combined)
+      case 'all-payments':
+        return (
+          <PaymentsView
+            initialStatus="ALL"
+            initialType="ALL"
+            onPaymentApproved={() => { fetchAllCards(); showToast('Payment verified & download unlocked!'); }}
+          />
+        );
+
+      // Payment Confirmation Approvals (Member & Staff)
       case 'payment-approvals':
         return (
           <PaymentsView
             initialStatus="SUBMITTED"
+            initialType="ALL"
             onPaymentApproved={() => { fetchAllCards(); showToast('Payment verified & download unlocked!'); }}
           />
         );
@@ -347,7 +372,7 @@ export default function AdminDashboard({ user, onLogout }) {
         return (
           <UnifiedCardsTable
             title="Staff ID Card Downloads"
-            subtitle="Approved and active staff cards (Free direct download)"
+            subtitle="Approved and active staff cards"
             icon={Layers}
             cards={unifiedCards.filter(c => c.profile_type === 'STAFF')}
             onPreviewCard={c => setPreviewCard({ ...c, mobile: c.mobile, phone: c.mobile })}
