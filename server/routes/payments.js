@@ -5,32 +5,34 @@ const crypto = require('crypto');
 const { db, logAudit, createNotification } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 
-const PAYMENT_AMOUNT = 9900; // ₹99 in paise
+const MEMBER_PAYMENT_AMOUNT = 9900; // ₹99 in paise
+const STAFF_PAYMENT_AMOUNT = 24900; // ₹249 in paise
+
+function getPaymentAmount(appOrRole) {
+  const isStaff = appOrRole?.application_type === 'STAFF' || appOrRole === 'STAFF';
+  return isStaff ? STAFF_PAYMENT_AMOUNT : MEMBER_PAYMENT_AMOUNT;
+}
 
 // POST /api/payments/create-order
-// Member creates a Razorpay order for ₹99 ID card download
+// Member (₹99) or Staff (₹249) creates a Razorpay order for ID card download
 router.post('/create-order', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { application_id } = req.body;
 
-    // Only USER role can pay; Staff downloads are free
-    if (req.user.role === 'STAFF') {
-      return res.status(403).json({ success: false, error: 'Staff ID Card downloads are free. No payment required.' });
-    }
-
     // Validate application
     const app = db.prepare('SELECT * FROM id_applications WHERE id = ? AND applicant_user_id = ?').get(application_id, userId);
     if (!app) return res.status(404).json({ success: false, error: 'Application not found.' });
-    if (app.application_type === 'STAFF') {
-      return res.status(403).json({ success: false, error: 'Staff ID Card downloads do not require payment.' });
-    }
     if (app.status !== 'APPROVED') {
       return res.status(400).json({ success: false, error: 'Application must be approved by Admin before paying.' });
     }
     if (app.download_unlocked === 1) {
       return res.status(400).json({ success: false, error: 'Download already unlocked. No further payment needed.' });
     }
+
+    const amountPaise = getPaymentAmount(app);
+    const amountRupees = amountPaise / 100;
+    const isStaff = app.application_type === 'STAFF';
 
     // Check for existing paid order
     const existingPaid = db.prepare(`
@@ -51,7 +53,7 @@ router.post('/create-order', requireAuth, async (req, res) => {
         const Razorpay = require('razorpay');
         const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
         const order = await razorpay.orders.create({
-          amount: PAYMENT_AMOUNT,
+          amount: amountPaise,
           currency: 'INR',
           receipt: `wd_app_${application_id}_u${userId}`,
           notes: {
@@ -59,7 +61,7 @@ router.post('/create-order', requireAuth, async (req, res) => {
             user_id: String(userId),
             user_name: req.user.full_name,
             user_email: req.user.email,
-            purpose: 'WorkDen Member ID Card Download'
+            purpose: isStaff ? 'WorkDen Staff ID Card Download' : 'WorkDen Member ID Card Download'
           }
         });
         orderId = order.id;
@@ -74,16 +76,16 @@ router.post('/create-order', requireAuth, async (req, res) => {
     const result = db.prepare(`
       INSERT INTO payment_orders (application_id, applicant_user_id, razorpay_order_id, amount, currency, status)
       VALUES (?, ?, ?, ?, 'INR', 'CREATED')
-    `).run(application_id, userId, trackingOrderId, PAYMENT_AMOUNT);
+    `).run(application_id, userId, trackingOrderId, amountPaise);
 
     logAudit('PAYMENT_ORDER_CREATED', req.user.email, 'PAYMENT', result.lastInsertRowid,
-      `Payment order created for application #${application_id}`, req.ip);
+      `Payment order created for ${isStaff ? 'Staff' : 'Member'} application #${application_id} (₹${amountRupees})`, req.ip);
 
     res.json({
       success: true,
       order_id: orderId, // null triggers direct live standard checkout in SDK
       tracking_order_id: trackingOrderId,
-      amount: PAYMENT_AMOUNT,
+      amount: amountPaise,
       currency: 'INR',
       key_id: keyId,
       payment_order_db_id: result.lastInsertRowid,
@@ -146,6 +148,11 @@ router.post('/verify', requireAuth, (req, res) => {
 
     const resolvedOrderId = razorpay_order_id || payOrder?.razorpay_order_id || `dir_${application_id}_${Date.now()}`;
 
+    const appRowForAmt = application_id ? db.prepare('SELECT application_type, full_name, card_id FROM id_applications WHERE id = ?').get(application_id) : null;
+    const expectedAmount = getPaymentAmount(appRowForAmt || req.user.role);
+    const amountRupees = (payOrder?.amount || expectedAmount) / 100;
+    const isStaffPayment = (appRowForAmt?.application_type || req.user.role) === 'STAFF';
+
     if (payOrder) {
       db.prepare(`
         UPDATE payment_orders 
@@ -156,8 +163,8 @@ router.post('/verify', requireAuth, (req, res) => {
       const ins = db.prepare(`
         INSERT INTO payment_orders (application_id, applicant_user_id, razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, currency, status)
         VALUES (?, ?, ?, ?, ?, ?, 'INR', 'PAID')
-      `).run(application_id, userId, resolvedOrderId, razorpay_payment_id, razorpay_signature || 'DIRECT_LIVE', PAYMENT_AMOUNT);
-      payOrder = { id: ins.lastInsertRowid, amount: PAYMENT_AMOUNT, razorpay_order_id: resolvedOrderId };
+      `).run(application_id, userId, resolvedOrderId, razorpay_payment_id, razorpay_signature || 'DIRECT_LIVE', expectedAmount);
+      payOrder = { id: ins.lastInsertRowid, amount: expectedAmount, razorpay_order_id: resolvedOrderId };
     }
 
     // Automatically unlock ID card download upon verified Razorpay payment
@@ -168,8 +175,7 @@ router.post('/verify', requireAuth, (req, res) => {
       // Record auto-verified payment confirmation for Admin Panel history
       const existingConf = db.prepare('SELECT id FROM payment_confirmations WHERE payment_order_id = ?').get(payOrder.id);
       if (!existingConf) {
-        const appRow = db.prepare('SELECT full_name, card_id FROM id_applications WHERE id = ?').get(application_id);
-        const cardRow = appRow?.card_id ? db.prepare('SELECT entity_code FROM id_card_records WHERE id = ?').get(appRow.card_id) : null;
+        const cardRow = appRowForAmt?.card_id ? db.prepare('SELECT entity_code FROM id_card_records WHERE id = ?').get(appRowForAmt.card_id) : null;
         db.prepare(`
           INSERT INTO payment_confirmations
             (application_id, applicant_user_id, payment_order_id, member_name, member_id,
@@ -177,34 +183,36 @@ router.post('/verify', requireAuth, (req, res) => {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'APPROVED', 'Razorpay Auto-Verify', CURRENT_TIMESTAMP)
         `).run(
           application_id, userId, payOrder.id,
-          appRow?.full_name || req.user.full_name,
+          appRowForAmt?.full_name || req.user.full_name,
           cardRow?.entity_code || null,
           razorpay_payment_id, resolvedOrderId,
-          payOrder.amount || PAYMENT_AMOUNT,
+          payOrder.amount || expectedAmount,
           new Date().toISOString()
         );
       }
     }
 
-    // Create notifications
-    createNotification(
-      null, // admin broadcast
-      'PAYMENT_RECEIVED',
-      'Member Payment Verified & Unlocked (₹99)',
-      `${req.user.full_name} paid ₹99 (Payment ID: ${razorpay_payment_id}). ID Card download automatically unlocked.`,
-      '/admin?tab=payments'
-    );
-
+    // Create notification for user
     createNotification(
       userId,
-      'PAYMENT_SUCCESS',
       'Payment Successful — ID Card Unlocked!',
-      `Your ₹99 payment (${razorpay_payment_id}) is verified. Your Official WorkDen ID Card is now unlocked for download.`,
-      '/member'
+      `Your ₹${amountRupees} payment (${razorpay_payment_id}) is verified. Your Official WorkDen ID Card is now unlocked for download.`,
+      'SUCCESS'
     );
 
+    // Notify admin users
+    const admins = db.prepare("SELECT id FROM auth_users WHERE role = 'ADMIN'").all();
+    for (const adm of admins) {
+      createNotification(
+        adm.id,
+        `${isStaffPayment ? 'Staff' : 'Member'} Payment Verified (₹${amountRupees})`,
+        `${req.user.full_name} paid ₹${amountRupees} (Payment ID: ${razorpay_payment_id}). ID Card unlocked.`,
+        'INFO'
+      );
+    }
+
     logAudit('PAYMENT_VERIFIED', req.user.email, 'PAYMENT', payOrder.id,
-      `Payment ${razorpay_payment_id} verified & ID card unlocked for application #${application_id}`, req.ip);
+      `Payment ${razorpay_payment_id} (₹${amountRupees}) verified & ID card unlocked for application #${application_id}`, req.ip);
 
     res.json({
       success: true,
@@ -213,7 +221,7 @@ router.post('/verify', requireAuth, (req, res) => {
       payment_order_id: payOrder.id,
       razorpay_payment_id,
       razorpay_order_id: resolvedOrderId,
-      amount: payOrder.amount || PAYMENT_AMOUNT
+      amount: payOrder.amount || expectedAmount
     });
   } catch (err) {
     console.error('Payment verify error:', err);
@@ -267,7 +275,7 @@ router.post('/submit-confirmation', requireAuth, (req, res) => {
       app?.full_name || req.user.full_name,
       memberIdRow?.entity_code || null,
       razorpay_payment_id, orderIdToSave,
-      amount || PAYMENT_AMOUNT,
+      amount || payOrder.amount || MEMBER_PAYMENT_AMOUNT,
       payment_date || new Date().toISOString()
     );
 

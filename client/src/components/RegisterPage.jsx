@@ -106,7 +106,7 @@ export default function RegisterPage({ onLogin, fixedType = null }) {
               <h2 className="text-white font-black text-lg mb-2">Register as Staff</h2>
               <p className="text-[#777] text-sm mb-5 leading-relaxed">Join as a WorkDen staff member. Get your official Staff ID card.</p>
               <div className="space-y-1.5 mb-5">
-                {['Free staff registration', 'Official Staff ID card', 'No payment required'].map(f => (
+                {['Free staff registration', 'Official Staff ID card', 'QR verified credential'].map(f => (
                   <div key={f} className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                     <span className="text-[#aaa] text-xs">{f}</span>

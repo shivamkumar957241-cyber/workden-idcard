@@ -113,7 +113,7 @@ export default function LandingPage() {
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-xl font-black text-white">WorkDen Staff</h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  100% Free Always
+                  Free Application
                 </span>
               </div>
 
@@ -125,7 +125,7 @@ export default function LandingPage() {
                 {[
                   'Free Staff ID Card Application',
                   'Document & Identity Verification',
-                  'Instant Direct Download',
+                  'Instant Digital ID Issuance',
                   'Official Employee Credential'
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2.5">

@@ -169,8 +169,8 @@ async function runTests() {
     const memberNotifs = await request('GET', '/api/payments/notifications', null, memberToken);
     console.log(`✅ Member has ${memberNotifs.body.data.length} notifications: "${memberNotifs.body.data[0]?.title}"`);
 
-    // 9. Staff Workflow (Completely FREE, zero payment)
-    console.log('\n[TEST 9] Staff Workflow (100% Free Application & Download)...');
+    // 9. Staff Workflow (Free Application -> Admin Approval -> ₹249 Payment -> Auto-Unlock)
+    console.log('\n[TEST 9] Staff Workflow (Free Application + ₹249 Unlock)...');
     const staffEmail = `teststaff_${Date.now()}@example.com`;
     const regStaffRes = await request('POST', '/api/auth/register', {
       full_name: 'Pooja Verma',
@@ -199,19 +199,35 @@ async function runTests() {
     const approveStaffRes = await request('POST', `/api/applications/${staffAppId}/approve`, null, adminToken);
     console.log(`✅ Staff ID approved by Admin. Entity code: ${approveStaffRes.body.entity_code}`);
 
-    // Verify Staff Card is immediately UNLOCKED with ZERO payment
+    // Verify Staff Card is APPROVED but LOCKED pending ₹249 payment
     const myStaffApp = (await request('GET', '/api/applications/my', null, staffToken)).body.data[0];
-    if (myStaffApp.download_unlocked !== 1 || myStaffApp.payment_status !== 'NOT_REQUIRED') {
-      throw new Error('Staff ID download should be immediately unlocked without payment: ' + JSON.stringify(myStaffApp));
+    if (myStaffApp.download_unlocked !== 0 || myStaffApp.payment_status !== 'PENDING') {
+      throw new Error('Staff ID download should be locked pending ₹249 payment: ' + JSON.stringify(myStaffApp));
     }
-    console.log(`✅ Staff ID Card is immediately active and UNLOCKED for download! Payment: NOT_REQUIRED`);
+    console.log(`✅ Staff ID Card is APPROVED and LOCKED pending ₹249 payment.`);
 
-    // Verify Staff is FORBIDDEN from creating a payment order
-    const staffPayAttempt = await request('POST', '/api/payments/create-order', { application_id: staffAppId }, staffToken);
-    if (staffPayAttempt.status !== 403) {
-      throw new Error('Staff should be blocked from payment: ' + staffPayAttempt.status);
+    // Staff creates ₹249 payment order
+    const staffPayOrderRes = await request('POST', '/api/payments/create-order', { application_id: staffAppId }, staffToken);
+    if (!staffPayOrderRes.body.success || staffPayOrderRes.body.amount !== 24900) {
+      throw new Error('Staff payment order should be 24900 paise (₹249): ' + JSON.stringify(staffPayOrderRes.body));
     }
-    console.log(`✅ Staff payment attempt correctly blocked with 403: "${staffPayAttempt.body.error}"`);
+    console.log(`✅ Staff ₹249 payment order created (amount: ${staffPayOrderRes.body.amount} paise).`);
+
+    // Verify Staff payment & auto-unlock
+    const staffVerifyRes = await request('POST', '/api/payments/verify', {
+      razorpay_payment_id: `pay_staff_test_${Date.now()}`,
+      application_id: staffAppId,
+      payment_order_db_id: staffPayOrderRes.body.payment_order_db_id
+    }, staffToken);
+    if (!staffVerifyRes.body.success || !staffVerifyRes.body.unlocked) {
+      throw new Error('Staff payment verify should auto-unlock: ' + JSON.stringify(staffVerifyRes.body));
+    }
+
+    const myStaffUnlocked = (await request('GET', '/api/applications/my', null, staffToken)).body.data[0];
+    if (myStaffUnlocked.download_unlocked !== 1 || myStaffUnlocked.payment_status !== 'VERIFIED') {
+      throw new Error('Staff ID Card should now be unlocked: ' + JSON.stringify(myStaffUnlocked));
+    }
+    console.log(`✅ Staff ID Card automatically UNLOCKED after ₹249 payment!`);
 
     // 10. Role-based security checks
     console.log('\n[TEST 10] Security & Role Access Enforcement...');

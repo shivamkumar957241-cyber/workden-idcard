@@ -20,6 +20,8 @@ export default function StaffDashboard({ user, onLogout }) {
   const [designations, setDesignations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showIdPreviewModal, setShowIdPreviewModal] = useState(false);
@@ -223,9 +225,135 @@ export default function StaffDashboard({ user, onLogout }) {
     }
   };
 
+  // Load Razorpay Checkout Script Dynamically
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (typeof window !== 'undefined' && window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const existing = document.getElementById('razorpay-checkout-script');
+      if (existing) {
+        existing.onload = () => resolve(true);
+        existing.onerror = () => resolve(false);
+        return;
+      }
+      const script = document.createElement('script');
+      script.id = 'razorpay-checkout-script';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.head.appendChild(script);
+    });
+  };
+
+  // Start Razorpay ₹249 Payment Flow for Staff ID Card
+  const handlePayNow = async () => {
+    if (!application) return;
+    setError('');
+    setPaying(true);
+
+    try {
+      const loaded = await loadRazorpayScript();
+      if (!loaded || typeof window === 'undefined' || !window.Razorpay) {
+        const msg = 'Failed to load Razorpay payment SDK. Please check your internet connection or ad blocker.';
+        alert(msg);
+        setError(msg);
+        setPaying(false);
+        return;
+      }
+
+      const orderRes = await authFetch('/api/payments/create-order', {
+        method: 'POST',
+        body: JSON.stringify({ application_id: application.id })
+      });
+      const orderData = await orderRes.json();
+
+      if (!orderData.success) {
+        const msg = orderData.error || 'Could not initiate payment order.';
+        alert(msg);
+        setError(msg);
+        setPaying(false);
+        return;
+      }
+
+      const options = {
+        key: orderData.key_id || 'rzp_live_U4VD9FTceH5P0x',
+        amount: orderData.amount || 24900,
+        currency: orderData.currency || 'INR',
+        name: 'WorkDen',
+        description: 'Official WorkDen Staff ID Card Download Fee (₹249)',
+        image: WORKDEN_LOGO_BASE64,
+        prefill: {
+          name: user?.full_name || application.full_name || form.full_name || '',
+          email: user?.email || application.email || form.email || '',
+          contact: application.mobile || form.mobile || ''
+        },
+        theme: { color: '#F5C542' },
+        modal: {
+          backdropclose: true,
+          escape: true,
+          ondismiss: function () {
+            setPaying(false);
+          }
+        },
+        handler: async function (response) {
+          setVerifying(true);
+          try {
+            const verifyRes = await authFetch('/api/payments/verify', {
+              method: 'POST',
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id || orderData.order_id || orderData.tracking_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature || null,
+                application_id: application.id,
+                payment_order_db_id: orderData.payment_order_db_id
+              })
+            });
+            const verifyJson = await verifyRes.json();
+            if (verifyJson.success) {
+              await fetchData();
+              setSuccess('Payment successful! Your Official Staff ID Card is now unlocked and ready to download.');
+              setActiveTab('card');
+            } else {
+              const vMsg = verifyJson.error || 'Payment verification failed.';
+              alert(vMsg);
+              setError(vMsg);
+            }
+          } catch (vErr) {
+            alert('Payment verification failed on server.');
+            setError('Payment verification failed on server.');
+          } finally {
+            setVerifying(false);
+            setPaying(false);
+          }
+        }
+      };
+
+      if (orderData.order_id) {
+        options.order_id = orderData.order_id;
+      }
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp) {
+        const errMsg = resp.error?.description || 'Payment was unsuccessful or cancelled.';
+        alert(errMsg);
+        setError(errMsg);
+        setPaying(false);
+      });
+      rzp.open();
+    } catch (err) {
+      alert('Payment initialization error: ' + err.message);
+      setError('Payment initialization error: ' + err.message);
+      setPaying(false);
+    }
+  };
+
   const isApproved = application?.status === 'APPROVED';
   const isPending = application?.status === 'PENDING';
   const isRejected = application?.status === 'REJECTED';
+  const isDownloadUnlocked = application?.download_unlocked === 1;
 
   // Card Data for IdCardRenderer (Staff)
   const cardData = application && isApproved ? {
@@ -305,7 +433,7 @@ export default function StaffDashboard({ user, onLogout }) {
           {[
             { id: 'overview', label: 'Dashboard Overview', icon: Sparkles },
             { id: 'apply', label: application ? 'My Staff Application' : 'Apply for Staff ID (Free)', icon: FileText },
-            ...(isApproved ? [{ id: 'card', label: 'Download Staff ID Card', icon: Download, badge: 'Free' }] : []),
+            ...(isApproved ? [{ id: 'card', label: isDownloadUnlocked ? 'Download Staff ID Card' : 'Staff ID Card (Locked)', icon: isDownloadUnlocked ? Download : Lock }] : []),
             { id: 'notifications', label: `Notifications ${unreadNotifCount > 0 ? `(${unreadNotifCount})` : ''}`, icon: Bell },
             { id: 'profile', label: 'Staff Profile', icon: User }
           ].map(tab => {
@@ -377,14 +505,15 @@ export default function StaffDashboard({ user, onLogout }) {
                     <div>
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-3">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Staff System — 100% Free Application & ID Card</span>
+                        <span>WorkDen Official Staff Portal</span>
                       </div>
                       <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                         Welcome, {user?.full_name || 'Staff Member'}
                       </h1>
                       <p className="text-[#888] text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
-                        WorkDen Official Staff Identity Portal. Submit your employment and Aadhar verification details.
-                        Once Admin approves your application, your Staff ID Card is immediately available for download at zero cost.
+                        {isApproved && !isDownloadUnlocked
+                          ? 'Your Staff ID Card application is approved! Unlock your card below to download PDF & PNG.'
+                          : 'WorkDen Official Staff Identity Portal. Submit your employment and Aadhar verification details free of charge.'}
                       </p>
                     </div>
 
@@ -399,7 +528,18 @@ export default function StaffDashboard({ user, onLogout }) {
                         </button>
                       )}
 
-                      {isApproved && (
+                      {isApproved && !isDownloadUnlocked && (
+                        <button
+                          onClick={handlePayNow}
+                          disabled={paying || verifying}
+                          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#F5C542] to-amber-400 hover:brightness-110 text-black font-black text-xs sm:text-sm shadow-xl shadow-[#F5C542]/30 transition transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
+                        >
+                          {paying || verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                          <span>{verifying ? 'Verifying...' : paying ? 'Opening Razorpay...' : 'Pay ₹249 & Unlock ID Card →'}</span>
+                        </button>
+                      )}
+
+                      {isApproved && isDownloadUnlocked && (
                         <button
                           onClick={() => setActiveTab('card')}
                           className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/20 transition transform hover:-translate-y-0.5 cursor-pointer"
@@ -450,18 +590,18 @@ export default function StaffDashboard({ user, onLogout }) {
                     </div>
 
                     <div className={`p-4 rounded-2xl border transition ${
-                      isApproved ? 'bg-[#1f1f1f] border-emerald-500/40 text-white' : 'bg-[#121212] border-[#2e2e2e] text-[#666]'
+                      isDownloadUnlocked ? 'bg-[#1f1f1f] border-emerald-500/40 text-white' : isApproved ? 'bg-[#1f1f1f] border-[#F5C542]/50 text-white' : 'bg-[#121212] border-[#2e2e2e] text-[#666]'
                     }`}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[10px] font-black uppercase tracking-wider">Step 3</span>
-                        {isApproved ? <Unlock className="w-4 h-4 text-emerald-400" /> : <Lock className="w-4 h-4 text-[#555]" />}
+                        {isDownloadUnlocked ? <Unlock className="w-4 h-4 text-emerald-400" /> : <Lock className="w-4 h-4 text-[#F5C542]" />}
                       </div>
-                      <p className="font-bold text-xs">Direct Free Download</p>
-                      <p className="text-[11px] text-[#777] mt-1">Staff ID card is immediately active without any payment</p>
+                      <p className="font-bold text-xs">{isApproved ? '₹249 Card Unlock & Download' : 'ID Card Issuance'}</p>
+                      <p className="text-[11px] text-[#777] mt-1">{isApproved ? 'Pay ₹249 to unlock PDF & PNG download' : 'Digital Staff ID generated after approval'}</p>
                       <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isApproved ? 'bg-emerald-500/10 text-emerald-400' : 'bg-[#222] text-[#666]'
+                        isDownloadUnlocked ? 'bg-emerald-500/10 text-emerald-400' : isApproved ? 'bg-[#F5C542]/20 text-[#F5C542]' : 'bg-[#222] text-[#666]'
                       }`}>
-                        {isApproved ? 'Free Download Ready' : 'Locked'}
+                        {isDownloadUnlocked ? 'Unlocked & Active' : isApproved ? 'Payment Ready' : 'Waiting'}
                       </span>
                     </div>
                   </div>
@@ -487,7 +627,17 @@ export default function StaffDashboard({ user, onLogout }) {
                         </p>
                       </div>
 
-                      {isApproved && (
+                      {isApproved && !isDownloadUnlocked && (
+                        <button
+                          onClick={handlePayNow}
+                          disabled={paying || verifying}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50"
+                        >
+                          {paying || verifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+                          <span>{verifying ? 'Verifying...' : paying ? 'Opening Razorpay...' : 'Pay ₹249 Now'}</span>
+                        </button>
+                      )}
+                      {isApproved && isDownloadUnlocked && (
                         <button
                           onClick={() => setActiveTab('card')}
                           className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer"
@@ -525,6 +675,100 @@ export default function StaffDashboard({ user, onLogout }) {
                         <p className="text-[#aaa]">
                           Reason: {application.rejection_reason || 'Information could not be verified.'}
                         </p>
+                      </div>
+                    )}
+
+                    {/* Approved Staff ID Card Preview (Locked until ₹249 paid, Unlocked immediately after) */}
+                    {isApproved && cardData && (
+                      <div className="mt-6 pt-6 border-t border-[#2a2a2a] flex flex-col items-center">
+                        <div className="flex items-center justify-between w-full max-w-md mb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-extrabold text-white uppercase tracking-wider">Staff ID Card Preview</span>
+                            {isDownloadUnlocked ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                                Unlocked
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-[#F5C542]/15 border border-[#F5C542]/30 text-[#F5C542] text-[10px] font-bold flex items-center gap-1">
+                                <Lock className="w-2.5 h-2.5" /> Locked
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-1 bg-[#121212] p-1 rounded-lg border border-[#353535]">
+                            <button
+                              type="button"
+                              onClick={() => setDashboardCardSide('front')}
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                                dashboardCardSide === 'front' ? 'bg-[#F5C542] text-black' : 'text-[#888] hover:text-white'
+                              }`}
+                            >
+                              Front
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDashboardCardSide('back')}
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                                dashboardCardSide === 'back' ? 'bg-[#F5C542] text-black' : 'text-[#888] hover:text-white'
+                              }`}
+                            >
+                              Back
+                            </button>
+                          </div>
+                        </div>
+
+                        <div
+                          onClick={() => {
+                            if (!isDownloadUnlocked && !paying && !verifying) handlePayNow();
+                          }}
+                          className={`relative rounded-2xl overflow-hidden shadow-2xl border ${
+                            !isDownloadUnlocked
+                              ? 'border-[#F5C542]/40 cursor-pointer group'
+                              : 'border-emerald-500/40'
+                          }`}
+                        >
+                          <div className={!isDownloadUnlocked ? 'blur-[2.5px] select-none pointer-events-none transition' : ''}>
+                            <IdCardRenderer
+                              card={cardData}
+                              settings={settings}
+                              side={dashboardCardSide}
+                            />
+                          </div>
+
+                          {!isDownloadUnlocked && (
+                            <div className="absolute inset-0 bg-black/55 backdrop-blur-[1.5px] flex flex-col items-center justify-center p-4 text-center transition group-hover:bg-black/45">
+                              <div className="w-12 h-12 rounded-2xl bg-[#F5C542]/20 border border-[#F5C542] flex items-center justify-center mb-2.5 shadow-lg shadow-[#F5C542]/20 group-hover:scale-105 transition">
+                                <Lock className="w-6 h-6 text-[#F5C542]" />
+                              </div>
+                              <p className="text-white font-black text-sm">Staff ID Card Approved & Ready</p>
+                              <p className="text-[#ccc] text-[11px] mt-0.5 max-w-[220px]">
+                                Pay ₹249 to unlock & download your official Staff ID card
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-5">
+                          {!isDownloadUnlocked ? (
+                            <button
+                              type="button"
+                              onClick={handlePayNow}
+                              disabled={paying || verifying}
+                              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-[#F5C542] to-amber-400 hover:brightness-110 text-black font-black text-xs sm:text-sm shadow-xl shadow-[#F5C542]/25 transition cursor-pointer disabled:opacity-50"
+                            >
+                              {paying || verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                              <span>{verifying ? 'Verifying Payment...' : paying ? 'Opening Razorpay...' : 'Download Staff ID Card (Pay ₹249 to Unlock)'}</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setShowIdPreviewModal(true)}
+                              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/20 transition cursor-pointer"
+                            >
+                              <Download className="w-4 h-4" />
+                              <span>Download Staff ID Card (PDF / PNG)</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -824,7 +1068,7 @@ export default function StaffDashboard({ user, onLogout }) {
             )}
 
             {/* ======================================================== */}
-            {/* TAB 3: DOWNLOAD STAFF ID CARD (COMPLETELY FREE) */}
+            {/* TAB 3: STAFF ID CARD (LOCKED UNTIL ₹249 PAID) */}
             {/* ======================================================== */}
             {activeTab === 'card' && (
               <div className="space-y-6">
@@ -834,7 +1078,7 @@ export default function StaffDashboard({ user, onLogout }) {
                     <h3 className="text-white font-extrabold text-lg">Staff Application Pending</h3>
                     <p className="text-[#888] text-xs mt-2 leading-relaxed">
                       Your Staff ID application is currently being verified by the Admin team. Once approved,
-                      your official Staff ID Card will be available for direct free download.
+                      your official Staff ID Card will appear here.
                     </p>
                   </div>
                 ) : (
@@ -843,25 +1087,44 @@ export default function StaffDashboard({ user, onLogout }) {
                       <div>
                         <div className="flex items-center gap-2">
                           <h2 className="text-white font-extrabold text-lg">Official Staff ID Card</h2>
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
-                            Active & Verified (Free)
-                          </span>
+                          {isDownloadUnlocked ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                              Unlocked & Active
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-[#F5C542]/15 border border-[#F5C542]/30 text-[#F5C542] text-[10px] font-bold flex items-center gap-1">
+                              <Lock className="w-3 h-3" /> Locked • Pay ₹249
+                            </span>
+                          )}
                         </div>
                         <p className="text-[#888] text-xs mt-0.5">
-                          Staff ID {application.id_number} • Direct high-resolution download with zero payment required.
+                          {isDownloadUnlocked
+                            ? `Staff ID ${application.id_number} • High-resolution print-ready download.`
+                            : 'Your Staff ID card is approved. Complete the ₹249 payment to unlock download.'}
                         </p>
                       </div>
 
-                      <button
-                        onClick={() => setShowIdPreviewModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Preview & Download PDF</span>
-                      </button>
+                      {isDownloadUnlocked ? (
+                        <button
+                          onClick={() => setShowIdPreviewModal(true)}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download Staff ID Card (PDF / PNG)</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handlePayNow}
+                          disabled={paying || verifying}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50"
+                        >
+                          {paying || verifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+                          <span>{verifying ? 'Verifying...' : paying ? 'Opening Razorpay...' : 'Download Staff ID Card (Pay ₹249)'}</span>
+                        </button>
+                      )}
                     </div>
 
-                    {/* Interactive Preview */}
+                    {/* Interactive Preview (Locked or Unlocked) */}
                     <div className="flex flex-col items-center">
                       <div className="flex gap-2 mb-4 bg-[#121212] p-1 rounded-xl border border-[#353535]">
                         <button
@@ -882,19 +1145,42 @@ export default function StaffDashboard({ user, onLogout }) {
                         </button>
                       </div>
 
-                      <div className="relative w-full max-w-[340px] aspect-[54/85.6] rounded-2xl overflow-hidden shadow-2xl border border-[#353535]">
-                        {cardData && (
-                          <IdCardRenderer
-                            card={cardData}
-                            settings={settings}
-                            side={dashboardCardSide}
-                          />
+                      <div
+                        onClick={() => {
+                          if (!isDownloadUnlocked && !paying && !verifying) handlePayNow();
+                        }}
+                        className={`relative rounded-2xl overflow-hidden shadow-2xl border ${
+                          !isDownloadUnlocked ? 'border-[#F5C542]/40 cursor-pointer group' : 'border-[#353535]'
+                        }`}
+                      >
+                        <div className={!isDownloadUnlocked ? 'blur-[2.5px] select-none pointer-events-none transition' : ''}>
+                          {cardData && (
+                            <IdCardRenderer
+                              card={cardData}
+                              settings={settings}
+                              side={dashboardCardSide}
+                            />
+                          )}
+                        </div>
+
+                        {!isDownloadUnlocked && (
+                          <div className="absolute inset-0 bg-black/55 backdrop-blur-[1.5px] flex flex-col items-center justify-center p-4 text-center transition group-hover:bg-black/45">
+                            <div className="w-12 h-12 rounded-2xl bg-[#F5C542]/20 border border-[#F5C542] flex items-center justify-center mb-2.5 shadow-lg shadow-[#F5C542]/20 group-hover:scale-105 transition">
+                              <Lock className="w-6 h-6 text-[#F5C542]" />
+                            </div>
+                            <p className="text-white font-black text-sm">Locked Staff ID Card Preview</p>
+                            <p className="text-[#ccc] text-[11px] mt-0.5 max-w-[220px]">
+                              Click here to pay ₹249 via Razorpay & unlock instant download
+                            </p>
+                          </div>
                         )}
                       </div>
 
                       <p className="text-[11px] text-[#777] mt-4 flex items-center gap-1.5">
                         <QrCode className="w-3.5 h-3.5 text-[#F5C542]" />
-                        Official WorkDen Staff Identification • Cryptographically signed QR code.
+                        {isDownloadUnlocked
+                          ? 'Official WorkDen Staff Identification • Cryptographically signed QR code.'
+                          : 'Once ₹249 payment succeeds, your Staff ID card unlocks automatically for instant download.'}
                       </p>
                     </div>
                   </div>

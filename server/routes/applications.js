@@ -250,21 +250,16 @@ router.post('/:id/approve', requireAuth, requireAdmin, (req, res) => {
     const token = generateSecureToken();
     db.prepare('INSERT INTO qr_verification_tokens (card_id, token, is_active) VALUES (?, ?, 1)').run(cardId, token);
 
-    // Update application record (payment_status differs for STAFF vs USER)
+    // Update application record (payment required after approval: ₹249 for STAFF, ₹99 for USER)
     db.prepare(`
       UPDATE id_applications 
       SET status = 'APPROVED', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP,
           profile_id = ?, card_id = ?, 
-          payment_status = ?,
-          download_unlocked = ?,
+          payment_status = 'PENDING',
+          download_unlocked = 0,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(
-      req.user.email, profileId, cardId,
-      app.application_type === 'STAFF' ? 'NOT_REQUIRED' : 'PENDING',
-      app.application_type === 'STAFF' ? 1 : 0,
-      appId
-    );
+    `).run(req.user.email, profileId, cardId, appId);
 
     // History
     db.prepare("INSERT INTO id_card_history (card_id, action, details, performed_by) VALUES (?, 'APPROVED', 'ID Card approved via application workflow', ?)").run(cardId, req.user.email);
@@ -274,7 +269,7 @@ router.post('/:id/approve', requireAuth, requireAdmin, (req, res) => {
       ? '✅ Staff ID Card Approved!'
       : '✅ Member ID Card Application Approved!';
     const notifMsg = app.application_type === 'STAFF'
-      ? `Your Staff ID Card (${entityCode}) has been approved. You can now download it from your dashboard.`
+      ? `Your Staff ID Card (${entityCode}) has been approved! Please pay ₹249 to unlock your ID Card download.`
       : `Your Member ID Card application has been approved! Please pay ₹99 to unlock your ID Card download.`;
     createNotification(app.applicant_user_id, notifTitle, notifMsg, 'SUCCESS');
 
