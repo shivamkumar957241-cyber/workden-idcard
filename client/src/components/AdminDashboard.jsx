@@ -27,18 +27,15 @@ const NAV_SECTIONS = [
   // Member Management & Workflows
   { id: 'member-management', label: 'Member Management', icon: Users, group: 'Member Portal' },
   { id: 'member-applications', label: 'Member ID Applications', icon: FileText, group: 'Member Portal', badge: 'member_pending' },
-  { id: 'member-payments', label: 'Member ID Card Payments', icon: CreditCard, group: 'Member Portal' },
   { id: 'member-downloads', label: 'Member Card Downloads', icon: Layers, group: 'Member Portal' },
 
   // Staff Management & Workflows
   { id: 'staff-management', label: 'Staff Management', icon: Shield, group: 'Staff Portal' },
   { id: 'staff-applications', label: 'Staff ID Applications', icon: FileText, group: 'Staff Portal', badge: 'staff_pending' },
-  { id: 'staff-payments', label: 'Staff ID Card Payments', icon: CreditCard, group: 'Staff Portal' },
   { id: 'staff-downloads', label: 'Staff Card Downloads', icon: Layers, group: 'Staff Portal' },
 
-  // Payments & Operations
-  { id: 'all-payments', label: 'All Payments (Member & Staff)', icon: CreditCard, group: 'Payments & Operations' },
-  { id: 'payment-approvals', label: 'Payment Approvals', icon: Clock, group: 'Payments & Operations', badge: 'payment_pending' },
+  // Unified Payments & Operations
+  { id: 'payments', label: 'Payments & Approvals', icon: CreditCard, group: 'Payments & Operations', badge: 'payment_pending' },
   { id: 'reports-stats', label: 'Reports & Statistics', icon: QrCode, group: 'Payments & Operations' },
   { id: 'notifications-audit', label: 'Notifications & Audit Logs', icon: ShieldCheck, group: 'Payments & Operations' },
   { id: 'design-settings', label: 'Settings', icon: Settings, group: 'Configuration' },
@@ -279,41 +276,15 @@ export default function AdminDashboard({ user, onLogout }) {
         );
 
       // 6. Member ID Card Payments
-      // Member ID Card Payments
+      // Unified Payments & Approvals (Member & Staff)
+      case 'payments':
       case 'member-payments':
-        return (
-          <PaymentsView
-            initialStatus="ALL"
-            initialType="USER"
-            onPaymentApproved={() => { fetchAllCards(); showToast('Payment verified & download unlocked!'); }}
-          />
-        );
-
-      // Staff ID Card Payments
       case 'staff-payments':
-        return (
-          <PaymentsView
-            initialStatus="ALL"
-            initialType="STAFF"
-            onPaymentApproved={() => { fetchAllCards(); showToast('Staff payment verified & download unlocked!'); }}
-          />
-        );
-
-      // All Payments (Member & Staff combined)
       case 'all-payments':
-        return (
-          <PaymentsView
-            initialStatus="ALL"
-            initialType="ALL"
-            onPaymentApproved={() => { fetchAllCards(); showToast('Payment verified & download unlocked!'); }}
-          />
-        );
-
-      // Payment Confirmation Approvals (Member & Staff)
       case 'payment-approvals':
         return (
           <PaymentsView
-            initialStatus="SUBMITTED"
+            initialStatus="ALL"
             initialType="ALL"
             onPaymentApproved={() => { fetchAllCards(); showToast('Payment verified & download unlocked!'); }}
           />
