@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { db, logAudit, createNotification } = require('../db');
+const { generateCardPreviewPng } = require('../utils/email');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'workden_super_secret_jwt_key_2026_do_not_share';
 
@@ -45,6 +46,45 @@ function resolveCardFromToken(token) {
 
   return { card, profile, app };
 }
+
+// GET /api/public-card/:token/preview.png - Render blurred locked (or unlocked) CR80 card PNG for email
+router.get('/:token/preview.png', async (req, res) => {
+  try {
+    const { card, profile, app } = resolveCardFromToken(req.params.token);
+    const settings = getPortalSettings();
+    const isStaff = card.profile_type === 'STAFF';
+    const requiresPayment = isStaff ? (settings.require_staff_payment !== 0) : (settings.require_member_payment !== 0);
+    const feeRupees = isStaff ? (parseInt(settings.staff_fee, 10) > 0 ? parseInt(settings.staff_fee, 10) : 249) : (parseInt(settings.member_fee, 10) > 0 ? parseInt(settings.member_fee, 10) : 99);
+
+    let isUnlocked = !requiresPayment;
+    if (app) {
+      isUnlocked = app.download_unlocked === 1 || !requiresPayment;
+    } else {
+      const conf = db.prepare("SELECT id FROM payment_confirmations WHERE member_id = ? AND status = 'APPROVED'").get(card.entity_code);
+      if (conf) isUnlocked = true;
+    }
+
+    const pngBuffer = await generateCardPreviewPng({
+      fullName: profile?.full_name || app?.full_name || 'WorkDen User',
+      entityCode: card.entity_code,
+      profileType: card.profile_type,
+      designation: profile?.designation || app?.designation || '',
+      department: profile?.department || app?.department || '',
+      currentPlan: profile?.current_plan || app?.current_plan || '',
+      mobile: profile?.mobile || app?.mobile || '',
+      expiryDate: card.expiry_date || '',
+      qrToken: card.qr_token || '',
+      isUnlocked,
+      feeRupees
+    });
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(pngBuffer);
+  } catch (err) {
+    res.status(404).send('Preview unavailable');
+  }
+});
 
 // GET /api/public-card/:token
 router.get('/:token', (req, res) => {
