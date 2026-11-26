@@ -18,8 +18,8 @@ export default function LandingPage() {
             <img src={WORKDEN_LOGO_BASE64} alt="WorkDen Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <span className="font-black text-base tracking-wider text-white">WORKDEN</span>
-            <span className="text-[#F5C542] text-[10px] font-bold tracking-widest ml-1.5 uppercase font-mono">PORTAL</span>
+            <span className="font-black text-base tracking-wide text-white">WorkDen</span>
+            <span className="text-[#F5C542] text-[10px] font-bold tracking-wider ml-1.5 font-mono">Portal</span>
             <p className="text-[11px] text-[#777] hidden sm:block">Official Identity Card & Verification</p>
           </div>
         </div>
@@ -177,18 +177,18 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-[#252525] bg-[#0E0E0E] px-4 sm:px-8 py-6 text-center text-xs text-[#777]">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>© {new Date().getFullYear()} WorkDen. All rights reserved. • MSME: UDYAM-KR-03-0640514 • GSTIN: 10KEJPM6504N1Z7</p>
-          <div className="flex items-center gap-4">
+          <p>© {new Date().getFullYear()} WorkDen. All rights reserved.</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             <button
               onClick={() => navigate('/admin/login')}
-              className="text-[#888] hover:text-[#F5C542] transition cursor-pointer"
+              className="text-[#888] hover:text-[#F5C542] transition cursor-pointer whitespace-nowrap"
             >
               Admin Portal
             </button>
             <span>•</span>
-            <span className="text-[#666]">support@workden.online</span>
+            <span className="text-[#666] whitespace-nowrap">support@workden.online</span>
             <span>•</span>
-            <span className="text-[#666]">+91 92627 25686</span>
+            <span className="text-[#666] whitespace-nowrap">+91 92627 25686</span>
           </div>
         </div>
       </footer>

@@ -421,8 +421,8 @@ export default function AdminDashboard({ user, onLogout }) {
             <img src={WORKDEN_LOGO_BASE64} alt="WorkDen Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <p className="text-white font-extrabold text-sm leading-tight tracking-wider flex items-center gap-1.5">
-              WORKDEN <span className="text-[#F5C542] text-[9px] font-mono border border-[#F5C542]/40 px-1 py-0.2 rounded">ADMIN</span>
+            <p className="text-white font-extrabold text-sm leading-tight tracking-wide flex items-center gap-1.5">
+              WorkDen <span className="text-[#F5C542] text-[9px] font-mono border border-[#F5C542]/40 px-1 py-0.2 rounded">Admin</span>
             </p>
             <p className="text-[#888] text-[10px] font-mono">Control Centre</p>
           </div>

@@ -383,9 +383,9 @@ export default function StaffDashboard({ user, onLogout }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-sm tracking-wide text-white">WORKDEN</span>
-              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#F5C542]/20 text-[#F5C542] border border-[#F5C542]/40">
-                STAFF PORTAL
+              <span className="font-black text-sm tracking-wide text-white">WorkDen</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F5C542]/20 text-[#F5C542] border border-[#F5C542]/40">
+                Staff Portal
               </span>
             </div>
             <p className="text-[11px] text-[#888] hidden sm:block">Employee & Operations Management</p>
