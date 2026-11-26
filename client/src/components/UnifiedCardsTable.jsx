@@ -10,6 +10,7 @@ import {
   Mail
 } from 'lucide-react';
 import { formatDateIST } from '../utils/date';
+import { getInitialsAvatarUri } from '../utils/avatar';
 
 export default function UnifiedCardsTable({
   title = 'All Issued ID Cards',
@@ -152,10 +153,10 @@ export default function UnifiedCardsTable({
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={c.photo_url || '/logo.png'}
+                            src={c.photo_url || getInitialsAvatarUri(c.full_name)}
                             alt={c.full_name}
                             className="w-9 h-9 rounded-xl object-cover border border-[#353535] shadow-sm bg-black"
-                            onError={(e) => { e.target.style.display = 'none'; }}
+                            onError={(e) => { e.currentTarget.src = getInitialsAvatarUri(c.full_name); }}
                           />
                           <div>
                             <div className="font-bold text-white">{c.full_name}</div>

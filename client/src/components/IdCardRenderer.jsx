@@ -3,6 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
 import { SHIVAM_SIGNATURE_BASE64 } from '../assets/signatureBase64';
 import { formatDateIST } from '../utils/date';
+import { getInitialsAvatarUri as getInitialsUri } from '../utils/avatar';
 
 const VERIFY_BASE = typeof import.meta !== 'undefined' && import.meta.env?.VITE_VERIFY_BASE_URL
   ? import.meta.env.VITE_VERIFY_BASE_URL
@@ -12,17 +13,6 @@ const VERIFY_BASE = typeof import.meta !== 'undefined' && import.meta.env?.VITE_
 // Rendered at high fidelity: 340px × 214px
 const CARD_W = 340;
 const CARD_H = 214;
-
-// Generate initials avatar as fallback in Matte Black & Gold
-const getInitialsUri = (name) => {
-  const initials = (name || 'WD').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="150" viewBox="0 0 120 150">
-    <rect width="120" height="150" fill="#0B0B0B"/>
-    <rect x="5" y="5" width="110" height="140" rx="8" fill="#171717" stroke="#F5C542" stroke-width="2"/>
-    <text x="60" y="85" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="40" font-weight="bold" fill="#F5C542" text-anchor="middle">${initials}</text>
-  </svg>`;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
-};
 
 // Front Side
 function IdCardFront({ card, settings, cardRef }) {

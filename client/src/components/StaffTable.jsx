@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getInitialsAvatarUri } from '../utils/avatar';
 import {
   Search,
   Filter,
@@ -208,10 +209,10 @@ export default function StaffTable({
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={s.photo_url || '/logo.png'}
+                          src={s.photo_url || getInitialsAvatarUri(s.full_name)}
                           alt={s.full_name}
                           className="w-9 h-9 rounded-xl object-cover border border-[#353535] shadow-sm bg-black"
-                          onError={(e) => { e.target.style.display = 'none'; }}
+                          onError={(e) => { e.currentTarget.src = getInitialsAvatarUri(s.full_name); }}
                         />
                         <div>
                           <div className="font-bold text-white">{s.full_name}</div>
@@ -353,9 +354,10 @@ export default function StaffTable({
             <div className="flex items-start justify-between border-b border-[#353535] pb-4">
               <div className="flex items-center gap-3">
                 <img
-                  src={selectedDetailStaff.photo_url || '/logo.png'}
+                  src={selectedDetailStaff.photo_url || getInitialsAvatarUri(selectedDetailStaff.full_name)}
                   alt={selectedDetailStaff.full_name}
                   className="w-14 h-14 rounded-2xl object-cover border border-[#353535] shadow bg-black"
+                  onError={(e) => { e.currentTarget.src = getInitialsAvatarUri(selectedDetailStaff.full_name); }}
                 />
                 <div>
                   <div className="flex items-center gap-2">

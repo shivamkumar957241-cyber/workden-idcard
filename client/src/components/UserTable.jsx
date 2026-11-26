@@ -11,6 +11,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { formatDateIST } from '../utils/date';
+import { getInitialsAvatarUri } from '../utils/avatar';
 
 export default function UserTable({
   userList = [],
@@ -143,10 +144,10 @@ export default function UserTable({
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={u.photo_url || '/logo.png'}
+                          src={u.photo_url || getInitialsAvatarUri(u.full_name)}
                           alt={u.full_name}
                           className="w-9 h-9 rounded-xl object-cover border border-[#353535] shadow-sm bg-black"
-                          onError={(e) => { e.target.style.display = 'none'; }}
+                          onError={(e) => { e.currentTarget.src = getInitialsAvatarUri(u.full_name); }}
                         />
                         <div>
                           <div className="font-bold text-white">{u.full_name}</div>

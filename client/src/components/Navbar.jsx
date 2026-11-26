@@ -7,6 +7,7 @@ import {
   Bell
 } from 'lucide-react';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
+import { getInitialsAvatarUri } from '../utils/avatar';
 
 export default function Navbar({
   currentRole,
@@ -115,9 +116,10 @@ export default function Navbar({
         <div className="flex items-center gap-2.5 pl-2 border-l border-[#353535]">
           <div className="w-8 h-8 rounded-full overflow-hidden border border-[#F5C542]/50 bg-[#171717]">
             <img
-              src={activeStaffProfile?.photo_url || WORKDEN_LOGO_BASE64}
+              src={activeStaffProfile?.photo_url || getInitialsAvatarUri(activeStaffProfile?.full_name || 'Admin')}
               alt="Profile"
               className="w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.src = getInitialsAvatarUri(activeStaffProfile?.full_name || 'Admin'); }}
             />
           </div>
           <div className="hidden lg:block text-left">

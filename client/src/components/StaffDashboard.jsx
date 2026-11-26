@@ -11,6 +11,7 @@ import { formatIST, formatDateIST } from '../utils/date';
 import IdCardRenderer from './IdCardRenderer';
 import IdCardPreviewModal from './IdCardPreviewModal';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
+import { getInitialsAvatarUri } from '../utils/avatar';
 
 export default function StaffDashboard({ user, onLogout }) {
   const initialTab = new URLSearchParams(window.location.search).get('tab') || 'overview';
@@ -808,10 +809,10 @@ export default function StaffDashboard({ user, onLogout }) {
 
                   <div className="flex items-center gap-4 mb-6 p-4 rounded-2xl bg-[#121212] border border-[#2a2a2a]">
                     <img
-                      src={application.photo_url || '/logo.png'}
+                      src={application.photo_url || getInitialsAvatarUri(application.full_name)}
                       alt={application.full_name}
                       className="w-16 h-20 rounded-xl object-cover border border-[#353535] bg-black"
-                      onError={e => { e.currentTarget.src = WORKDEN_LOGO_BASE64; }}
+                      onError={e => { e.currentTarget.src = getInitialsAvatarUri(application.full_name); }}
                     />
                     <div>
                       <p className="text-white font-extrabold text-base">{application.full_name}</p>
