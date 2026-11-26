@@ -44,11 +44,41 @@ export default function App() {
           }
         />
 
-        {/* Authentication Pages */}
+        {/* Dedicated Authentication Pages */}
+        <Route
+          path="/member/login"
+          element={
+            user ? <Navigate to={getRoleDestination(user)} replace /> : <LoginPage fixedType="member" onLogin={handleLogin} />
+          }
+        />
+        <Route
+          path="/staff/login"
+          element={
+            user ? <Navigate to={getRoleDestination(user)} replace /> : <LoginPage fixedType="staff" onLogin={handleLogin} />
+          }
+        />
+        <Route
+          path="/admin/login"
+          element={
+            user ? <Navigate to={getRoleDestination(user)} replace /> : <LoginPage fixedType="admin" onLogin={handleLogin} />
+          }
+        />
         <Route
           path="/login"
           element={
             user ? <Navigate to={getRoleDestination(user)} replace /> : <LoginPage onLogin={handleLogin} />
+          }
+        />
+        <Route
+          path="/member/register"
+          element={
+            user ? <Navigate to={getRoleDestination(user)} replace /> : <RegisterPage fixedType="member" onLogin={handleLogin} />
+          }
+        />
+        <Route
+          path="/staff/register"
+          element={
+            user ? <Navigate to={getRoleDestination(user)} replace /> : <RegisterPage fixedType="staff" onLogin={handleLogin} />
           }
         />
         <Route
@@ -63,7 +93,7 @@ export default function App() {
           path="/admin/*"
           element={
             !user ? (
-              <Navigate to="/login?type=admin" replace />
+              <Navigate to="/admin/login" replace />
             ) : user.role !== 'ADMIN' ? (
               <Navigate to={getRoleDestination(user)} replace />
             ) : (
@@ -77,7 +107,7 @@ export default function App() {
           path="/member/*"
           element={
             !user ? (
-              <Navigate to="/login?type=member" replace />
+              <Navigate to="/member/login" replace />
             ) : user.role === 'ADMIN' ? (
               <Navigate to="/admin" replace />
             ) : user.role === 'STAFF' ? (
@@ -93,7 +123,7 @@ export default function App() {
           path="/staff/*"
           element={
             !user ? (
-              <Navigate to="/login?type=staff" replace />
+              <Navigate to="/staff/login" replace />
             ) : user.role === 'ADMIN' ? (
               <Navigate to="/admin" replace />
             ) : user.role !== 'STAFF' ? (

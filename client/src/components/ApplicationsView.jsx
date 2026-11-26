@@ -89,7 +89,12 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
   };
 
   const handleDeleteApp = async (appId, name) => {
-    if (!window.confirm(`Are you sure you want to permanently delete the application for "${name}"?\n\nThis action cannot be undone.`)) return;
+    window.getSelection()?.removeAllRanges();
+    if (!window.confirm(`Are you sure you want to permanently delete the application for "${name}"?\n\nThis action cannot be undone.`)) {
+      window.getSelection()?.removeAllRanges();
+      return;
+    }
+    window.getSelection()?.removeAllRanges();
     setProcessing(true);
     try {
       const res = await authFetch(`/api/applications/${appId}`, { method: 'DELETE' });

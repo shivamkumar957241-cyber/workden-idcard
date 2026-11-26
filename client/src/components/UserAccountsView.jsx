@@ -42,14 +42,17 @@ export default function UserAccountsView({ onPreviewCard }) {
   }, []);
 
   const handleDeleteAccount = async (acc) => {
+    window.getSelection()?.removeAllRanges();
     if (acc.role === 'ADMIN') {
       alert('Admin accounts cannot be deleted.');
       return;
     }
 
     if (!window.confirm(`Are you sure you want to PERMANENTLY delete the account for "${acc.full_name}" (${acc.email})?\n\nThis will permanently delete their login account, applications, and any linked ID cards from all database tables.`)) {
+      window.getSelection()?.removeAllRanges();
       return;
     }
+    window.getSelection()?.removeAllRanges();
 
     try {
       const res = await authFetch(`/api/auth/accounts/${acc.user_id}`, { method: 'DELETE' });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -37,6 +37,10 @@ export default function StaffTable({
 }) {
   const [selectedStaffIds, setSelectedStaffIds] = useState([]);
   const [selectedDetailStaff, setSelectedDetailStaff] = useState(null);
+
+  useEffect(() => {
+    setSelectedStaffIds([]);
+  }, [staffList]);
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -283,8 +287,12 @@ export default function StaffTable({
                         </button>
                         {onDeleteCard && (
                           <button
-                            onClick={() => onDeleteCard({ ...s, id: s.card_id || s.id, entity_code: s.staff_id })}
-                            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.getSelection()?.removeAllRanges();
+                              onDeleteCard({ ...s, id: s.card_id || s.id, entity_code: s.staff_id });
+                            }}
+                            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer select-none"
                             title="Permanently Delete ID Card"
                           >
                             <Trash2 className="w-4 h-4" />

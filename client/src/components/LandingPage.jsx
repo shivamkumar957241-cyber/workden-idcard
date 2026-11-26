@@ -26,16 +26,10 @@ export default function LandingPage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/login?type=admin')}
-            className="text-xs text-[#888] hover:text-[#F5C542] transition px-3 py-1.5 rounded-lg border border-transparent hover:border-[#353535] cursor-pointer"
+            onClick={() => navigate('/admin/login')}
+            className="text-xs text-[#888] hover:text-[#F5C542] transition px-3 py-1.5 rounded-lg border border-[#353535] hover:border-[#F5C542]/50 cursor-pointer"
           >
-            Admin Sign In
-          </button>
-          <button
-            onClick={() => navigate('/login')}
-            className="px-4 py-2 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs rounded-xl shadow-lg shadow-[#F5C542]/20 transition cursor-pointer"
-          >
-            Sign In →
+            Admin Login
           </button>
         </div>
       </header>
@@ -45,16 +39,16 @@ export default function LandingPage() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1c1c1c] border border-[#F5C542]/40 text-[#F5C542] text-xs font-bold mb-6 shadow-xl">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>WorkDen Digital Task Platform • Official Identity Verification Portal</span>
+          <span>WorkDen Official Identity Portal</span>
         </div>
 
         {/* Hero Title */}
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight max-w-3xl leading-[1.15]">
-          Official WorkDen <span className="text-[#F5C542]">Identity Cards</span> & QR Verification
+          Official WorkDen <span className="text-[#F5C542]">Identity Cards</span>
         </h1>
 
-        <p className="text-[#888] text-sm sm:text-base mt-4 max-w-2xl leading-relaxed">
-          Welcome to the official identity portal of WorkDen. Please select your role to apply for your official Identity Card, track review status, or download your verified card.
+        <p className="text-[#888] text-sm sm:text-base mt-4 max-w-xl leading-relaxed">
+          Select your portal below to apply for your verified WorkDen ID card or sign in to download.
         </p>
 
         {/* Two Main Cards: Apply as Member vs Apply as Staff */}
@@ -74,15 +68,15 @@ export default function LandingPage() {
               </div>
 
               <p className="text-[#888] text-xs sm:text-sm mb-6 leading-relaxed">
-                For registered digital task contributors, micro-task operators, form management, and transcription specialists on the WorkDen platform.
+                For registered WorkDen platform members and digital task contributors.
               </p>
 
               <div className="space-y-2.5 mb-8">
                 {[
-                  '100% Free Application Submission',
-                  'Admin Review & Identity Verification',
-                  '₹99 Download Fee (Only after approval)',
-                  'Encrypted QR Verification Token'
+                  'Free Application Submission',
+                  'Admin Review & Verification',
+                  '₹99 Download Fee (After Approval)',
+                  'QR Verified Digital ID Card'
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -94,14 +88,14 @@ export default function LandingPage() {
 
             <div className="space-y-2.5">
               <button
-                onClick={() => navigate('/register?type=member')}
+                onClick={() => navigate('/member/register')}
                 className="w-full py-3.5 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs sm:text-sm rounded-2xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Apply as Member (Free)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={() => navigate('/login?type=member')}
+                onClick={() => navigate('/member/login')}
                 className="w-full py-2.5 bg-[#222] hover:bg-[#2a2a2a] text-[#aaa] hover:text-white font-bold text-xs rounded-xl border border-[#353535] transition text-center cursor-pointer"
               >
                 Member Sign In
@@ -124,15 +118,15 @@ export default function LandingPage() {
               </div>
 
               <p className="text-[#888] text-xs sm:text-sm mb-6 leading-relaxed">
-                For official WorkDen team members, quality assurance (QA), task verifiers, and administrative staff.
+                For official WorkDen operations, QA verifiers, and management team.
               </p>
 
               <div className="space-y-2.5 mb-8">
                 {[
-                  '100% Free Staff ID Card Application',
-                  'Aadhar & Qualification Document Verification',
-                  'Completely Free Direct Download',
-                  'Zero Payment Required (Ever)'
+                  'Free Staff ID Card Application',
+                  'Document & Identity Verification',
+                  'Instant Free Direct Download',
+                  'Zero Payment Required'
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -144,14 +138,14 @@ export default function LandingPage() {
 
             <div className="space-y-2.5">
               <button
-                onClick={() => navigate('/register?type=staff')}
+                onClick={() => navigate('/staff/register')}
                 className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs sm:text-sm rounded-2xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Apply as Staff (Free)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={() => navigate('/login?type=staff')}
+                onClick={() => navigate('/staff/login')}
                 className="w-full py-2.5 bg-[#222] hover:bg-[#2a2a2a] text-[#aaa] hover:text-white font-bold text-xs rounded-xl border border-[#353535] transition text-center cursor-pointer"
               >
                 Staff Sign In
@@ -186,7 +180,7 @@ export default function LandingPage() {
           <p>© {new Date().getFullYear()} WorkDen. All rights reserved. • MSME: UDYAM-KR-03-0640514 • GSTIN: 10KEJPM6504N1Z7</p>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/login?type=admin')}
+              onClick={() => navigate('/admin/login')}
               className="text-[#888] hover:text-[#F5C542] transition cursor-pointer"
             >
               Admin Portal

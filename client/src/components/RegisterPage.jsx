@@ -4,21 +4,25 @@ import { Eye, EyeOff, Loader2, AlertCircle, Users, Briefcase, CheckCircle2, Arro
 import API_BASE from '../api';
 import { WORKDEN_LOGO_BASE64 } from '../assets/logoBase64';
 
-export default function RegisterPage({ onLogin }) {
+export default function RegisterPage({ onLogin, fixedType = null }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [regType, setRegType] = useState(null); // null = choose, 'member', 'staff'
+  const [regType, setRegType] = useState(fixedType); // null = choose, 'member', 'staff'
   const [form, setForm] = useState({ full_name: '', email: '', password: '', confirm_password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (fixedType) {
+      setRegType(fixedType);
+      return;
+    }
     const params = new URLSearchParams(location.search);
     const type = params.get('type');
     if (type === 'staff') setRegType('staff');
     else if (type === 'member') setRegType('member');
-  }, [location.search]);
+  }, [location.search, fixedType]);
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
@@ -133,9 +137,9 @@ export default function RegisterPage({ onLogin }) {
         <div className="bg-[#171717] border border-[#353535] rounded-3xl shadow-2xl overflow-hidden">
           <div className="h-1.5 w-full bg-gradient-to-r from-[#F5C542] via-[#FFD84D] to-[#F5C542]" />
           <div className="p-7">
-            <button onClick={() => { setRegType(null); navigate('/register', { replace: true }); }}
-              className="flex items-center gap-1.5 text-[#888] hover:text-[#F5C542] text-xs mb-6 transition-colors">
-              <ArrowLeft className="w-3.5 h-3.5" /> Back to options
+            <button onClick={() => { if (fixedType) { navigate('/'); } else { setRegType(null); navigate('/register', { replace: true }); } }}
+              className="flex items-center gap-1.5 text-[#888] hover:text-[#F5C542] text-xs mb-6 transition-colors cursor-pointer">
+              <ArrowLeft className="w-3.5 h-3.5" /> {fixedType ? 'Back to Home' : 'Back to options'}
             </button>
 
             <div className="text-center mb-7">
@@ -208,7 +212,7 @@ export default function RegisterPage({ onLogin }) {
 
             <p className="text-center text-[#888] text-xs mt-5">
               Already have an account?{' '}
-              <button onClick={() => navigate('/login')} className="text-[#F5C542] hover:underline font-bold">Sign in here</button>
+              <button onClick={() => navigate(isStaff ? '/staff/login' : '/member/login')} className="text-[#F5C542] hover:underline font-bold cursor-pointer">Sign in here</button>
             </p>
           </div>
         </div>

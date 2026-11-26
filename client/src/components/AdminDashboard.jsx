@@ -220,11 +220,14 @@ export default function AdminDashboard({ user, onLogout }) {
   };
 
   const handleDeleteCard = async (card) => {
+    window.getSelection()?.removeAllRanges();
     const cardId = card.card_id || card.id;
     const name = card.full_name || card.entity_code || card.staff_id || card.user_id_code || 'this record';
     if (!window.confirm(`Are you sure you want to PERMANENTLY delete the record for "${name}"?\n\nThis will completely purge this person, ID card, QR verification token, and application from all database tables.`)) {
+      window.getSelection()?.removeAllRanges();
       return;
     }
+    window.getSelection()?.removeAllRanges();
 
     try {
       let endpoint = `/api/cards/${cardId}`;

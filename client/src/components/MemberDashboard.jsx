@@ -260,15 +260,9 @@ export default function MemberDashboard({ user, onLogout }) {
             });
             const verifyJson = await verifyRes.json();
             if (verifyJson.success) {
-              // Set payment data & open confirmation view
-              setPaymentData({
-                order_id: response.razorpay_order_id || orderData.order_id || orderData.tracking_order_id || `dir_${application.id}_${Date.now()}`,
-                payment_id: response.razorpay_payment_id,
-                amount: 9900,
-                payment_order_id: verifyJson.payment_order_id || orderData.payment_order_db_id,
-                date: new Date().toISOString()
-              });
-              setActiveTab('payment-confirmation');
+              await fetchData();
+              setSuccess('Payment successful! Your Official WorkDen ID Card is now unlocked and ready to download.');
+              setActiveTab('download');
             } else {
               const vMsg = verifyJson.error || 'Payment signature verification failed.';
               alert(vMsg);
@@ -731,6 +725,103 @@ export default function MemberDashboard({ user, onLogout }) {
                         </p>
                       </div>
                     )}
+
+                    {/* Approved ID Card Preview (Locked until ₹99 paid, Unlocked immediately after) */}
+                    {isApproved && cardData && (
+                      <div className="mt-6 pt-6 border-t border-[#2a2a2a] flex flex-col items-center">
+                        <div className="flex items-center justify-between w-full max-w-md mb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-extrabold text-white uppercase tracking-wider">ID Card Preview</span>
+                            {isDownloadUnlocked ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                                Unlocked
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-[#F5C542]/15 border border-[#F5C542]/30 text-[#F5C542] text-[10px] font-bold flex items-center gap-1">
+                                <Lock className="w-2.5 h-2.5" /> Locked
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-1 bg-[#121212] p-1 rounded-lg border border-[#353535]">
+                            <button
+                              type="button"
+                              onClick={() => setDashboardCardSide('front')}
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                                dashboardCardSide === 'front' ? 'bg-[#F5C542] text-black' : 'text-[#888] hover:text-white'
+                              }`}
+                            >
+                              Front
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDashboardCardSide('back')}
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                                dashboardCardSide === 'back' ? 'bg-[#F5C542] text-black' : 'text-[#888] hover:text-white'
+                              }`}
+                            >
+                              Back
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Card Container */}
+                        <div
+                          onClick={() => {
+                            if (!isDownloadUnlocked && !paying && !verifying) handlePayNow();
+                          }}
+                          className={`relative rounded-2xl overflow-hidden shadow-2xl border ${
+                            !isDownloadUnlocked
+                              ? 'border-[#F5C542]/40 cursor-pointer group'
+                              : 'border-emerald-500/40'
+                          }`}
+                        >
+                          <div className={!isDownloadUnlocked ? 'blur-[2.5px] select-none pointer-events-none transition' : ''}>
+                            <IdCardRenderer
+                              card={cardData}
+                              settings={settings}
+                              side={dashboardCardSide}
+                            />
+                          </div>
+
+                          {/* Locked Overlay */}
+                          {!isDownloadUnlocked && (
+                            <div className="absolute inset-0 bg-black/55 backdrop-blur-[1.5px] flex flex-col items-center justify-center p-4 text-center transition group-hover:bg-black/45">
+                              <div className="w-12 h-12 rounded-2xl bg-[#F5C542]/20 border border-[#F5C542] flex items-center justify-center mb-2.5 shadow-lg shadow-[#F5C542]/20 group-hover:scale-105 transition">
+                                <Lock className="w-6 h-6 text-[#F5C542]" />
+                              </div>
+                              <p className="text-white font-black text-sm">ID Card Approved & Ready</p>
+                              <p className="text-[#ccc] text-[11px] mt-0.5 max-w-[220px]">
+                                Pay ₹99 to unlock & download your official ID card
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Button Below Card */}
+                        <div className="mt-5">
+                          {!isDownloadUnlocked ? (
+                            <button
+                              type="button"
+                              onClick={handlePayNow}
+                              disabled={paying || verifying}
+                              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-[#F5C542] to-amber-400 hover:brightness-110 text-black font-black text-xs sm:text-sm shadow-xl shadow-[#F5C542]/25 transition cursor-pointer disabled:opacity-50"
+                            >
+                              {paying || verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                              <span>{verifying ? 'Verifying Payment...' : paying ? 'Opening Razorpay...' : 'Download ID Card (Pay ₹99 to Unlock)'}</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setShowIdPreviewModal(true)}
+                              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/20 transition cursor-pointer"
+                            >
+                              <Download className="w-4 h-4" />
+                              <span>Download ID Card (PDF / PNG)</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1066,25 +1157,13 @@ export default function MemberDashboard({ user, onLogout }) {
             {/* ======================================================== */}
             {activeTab === 'download' && (
               <div className="space-y-6">
-                {!isDownloadUnlocked ? (
+                {!isApproved ? (
                   <div className="bg-[#171717] border border-[#353535] rounded-3xl p-12 text-center max-w-md mx-auto">
-                    <Lock className="w-12 h-12 text-[#F5C542] mx-auto mb-4" />
-                    <h3 className="text-white font-extrabold text-lg">ID Card Download Locked</h3>
+                    <Clock className="w-12 h-12 text-[#F5C542] mx-auto mb-4" />
+                    <h3 className="text-white font-extrabold text-lg">Application Under Review</h3>
                     <p className="text-[#888] text-xs mt-2 leading-relaxed">
-                      {isPaymentPaid
-                        ? 'Your payment confirmation has been submitted to Admin. Download will be unlocked once approved.'
-                        : isApproved
-                        ? 'Your application is approved. Please complete the ₹99 payment to unlock your ID card download.'
-                        : 'Your application is still under review. Once approved and verified, you can download your card here.'}
+                      Your ID card will appear here once your application is approved by WorkDen Admin.
                     </p>
-                    {isApproved && !isPaymentPaid && (
-                      <button
-                        onClick={() => setActiveTab('payment')}
-                        className="mt-5 px-6 py-2.5 bg-[#F5C542] text-black font-black text-xs rounded-xl shadow-lg cursor-pointer"
-                      >
-                        Go to Payment (₹99) →
-                      </button>
-                    )}
                   </div>
                 ) : (
                   <div className="bg-[#171717] border border-[#353535] rounded-3xl p-6 sm:p-8">
@@ -1092,27 +1171,46 @@ export default function MemberDashboard({ user, onLogout }) {
                       <div>
                         <div className="flex items-center gap-2">
                           <h2 className="text-white font-extrabold text-lg">Official Member ID Card</h2>
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
-                            Active & Verified
-                          </span>
+                          {isDownloadUnlocked ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                              Unlocked & Active
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-[#F5C542]/15 border border-[#F5C542]/30 text-[#F5C542] text-[10px] font-bold flex items-center gap-1">
+                              <Lock className="w-3 h-3" /> Locked • Pay ₹99
+                            </span>
+                          )}
                         </div>
                         <p className="text-[#888] text-xs mt-0.5">
-                          High-resolution print-ready identity card with encrypted QR verification.
+                          {isDownloadUnlocked
+                            ? 'High-resolution print-ready identity card with QR verification.'
+                            : 'Your ID card is approved. Complete the ₹99 payment to unlock download.'}
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setShowIdPreviewModal(true)}
-                          className="flex items-center gap-2 px-4 py-2 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Preview & Download PDF</span>
-                        </button>
+                        {isDownloadUnlocked ? (
+                          <button
+                            onClick={() => setShowIdPreviewModal(true)}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download ID Card (PDF / PNG)</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handlePayNow}
+                            disabled={paying || verifying}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50"
+                          >
+                            {paying || verifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+                            <span>{verifying ? 'Verifying...' : paying ? 'Opening Razorpay...' : 'Download ID Card (Pay ₹99)'}</span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    {/* Interactive Card Preview */}
+                    {/* Interactive Card Preview (Locked or Unlocked) */}
                     <div className="flex flex-col items-center">
                       <div className="flex gap-2 mb-4 bg-[#121212] p-1 rounded-xl border border-[#353535]">
                         <button
@@ -1133,19 +1231,42 @@ export default function MemberDashboard({ user, onLogout }) {
                         </button>
                       </div>
 
-                      <div className="relative w-full max-w-[340px] aspect-[54/85.6] rounded-2xl overflow-hidden shadow-2xl border border-[#353535]">
-                        {cardData && (
-                          <IdCardRenderer
-                            card={cardData}
-                            settings={settings}
-                            side={dashboardCardSide}
-                          />
+                      <div
+                        onClick={() => {
+                          if (!isDownloadUnlocked && !paying && !verifying) handlePayNow();
+                        }}
+                        className={`relative rounded-2xl overflow-hidden shadow-2xl border ${
+                          !isDownloadUnlocked ? 'border-[#F5C542]/40 cursor-pointer group' : 'border-[#353535]'
+                        }`}
+                      >
+                        <div className={!isDownloadUnlocked ? 'blur-[2.5px] select-none pointer-events-none transition' : ''}>
+                          {cardData && (
+                            <IdCardRenderer
+                              card={cardData}
+                              settings={settings}
+                              side={dashboardCardSide}
+                            />
+                          )}
+                        </div>
+
+                        {!isDownloadUnlocked && (
+                          <div className="absolute inset-0 bg-black/55 backdrop-blur-[1.5px] flex flex-col items-center justify-center p-4 text-center transition group-hover:bg-black/45">
+                            <div className="w-12 h-12 rounded-2xl bg-[#F5C542]/20 border border-[#F5C542] flex items-center justify-center mb-2.5 shadow-lg shadow-[#F5C542]/20 group-hover:scale-105 transition">
+                              <Lock className="w-6 h-6 text-[#F5C542]" />
+                            </div>
+                            <p className="text-white font-black text-sm">Locked ID Card Preview</p>
+                            <p className="text-[#ccc] text-[11px] mt-0.5 max-w-[220px]">
+                              Click here to pay ₹99 via Razorpay & unlock instant download
+                            </p>
+                          </div>
                         )}
                       </div>
 
                       <p className="text-[11px] text-[#777] mt-4 flex items-center gap-1.5">
                         <QrCode className="w-3.5 h-3.5 text-[#F5C542]" />
-                        Anyone scanning your card's QR code will be redirected to the official verification page.
+                        {isDownloadUnlocked
+                          ? "Anyone scanning your card's QR code will be redirected to the official verification page."
+                          : 'Once ₹99 payment succeeds, your card unlocks automatically for instant download.'}
                       </p>
                     </div>
                   </div>

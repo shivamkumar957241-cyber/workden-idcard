@@ -160,35 +160,56 @@ router.post('/verify', requireAuth, (req, res) => {
       payOrder = { id: ins.lastInsertRowid, amount: PAYMENT_AMOUNT, razorpay_order_id: resolvedOrderId };
     }
 
-    // Update application payment_status
+    // Automatically unlock ID card download upon verified Razorpay payment
     if (application_id) {
-      db.prepare("UPDATE id_applications SET payment_status = 'PAID', updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+      db.prepare("UPDATE id_applications SET payment_status = 'VERIFIED', download_unlocked = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
         .run(application_id);
+
+      // Record auto-verified payment confirmation for Admin Panel history
+      const existingConf = db.prepare('SELECT id FROM payment_confirmations WHERE payment_order_id = ?').get(payOrder.id);
+      if (!existingConf) {
+        const appRow = db.prepare('SELECT full_name, card_id FROM id_applications WHERE id = ?').get(application_id);
+        const cardRow = appRow?.card_id ? db.prepare('SELECT entity_code FROM id_card_records WHERE id = ?').get(appRow.card_id) : null;
+        db.prepare(`
+          INSERT INTO payment_confirmations
+            (application_id, applicant_user_id, payment_order_id, member_name, member_id,
+             razorpay_payment_id, razorpay_order_id, amount, payment_date, status, reviewed_by, reviewed_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'APPROVED', 'Razorpay Auto-Verify', CURRENT_TIMESTAMP)
+        `).run(
+          application_id, userId, payOrder.id,
+          appRow?.full_name || req.user.full_name,
+          cardRow?.entity_code || null,
+          razorpay_payment_id, resolvedOrderId,
+          payOrder.amount || PAYMENT_AMOUNT,
+          new Date().toISOString()
+        );
+      }
     }
 
     // Create notifications
     createNotification(
       null, // admin broadcast
       'PAYMENT_RECEIVED',
-      'Member Payment Completed (₹99)',
-      `${req.user.full_name} paid ₹99 (Payment ID: ${razorpay_payment_id}). Review payment confirmation in Admin Panel.`,
+      'Member Payment Verified & Unlocked (₹99)',
+      `${req.user.full_name} paid ₹99 (Payment ID: ${razorpay_payment_id}). ID Card download automatically unlocked.`,
       '/admin?tab=payments'
     );
 
     createNotification(
       userId,
       'PAYMENT_SUCCESS',
-      'Payment Received (₹99)',
-      `Your ₹99 payment (${razorpay_payment_id}) has been recorded. Please review and submit your payment confirmation form.`,
+      'Payment Successful — ID Card Unlocked!',
+      `Your ₹99 payment (${razorpay_payment_id}) is verified. Your Official WorkDen ID Card is now unlocked for download.`,
       '/member'
     );
 
     logAudit('PAYMENT_VERIFIED', req.user.email, 'PAYMENT', payOrder.id,
-      `Payment ${razorpay_payment_id} verified for application #${application_id}`, req.ip);
+      `Payment ${razorpay_payment_id} verified & ID card unlocked for application #${application_id}`, req.ip);
 
     res.json({
       success: true,
-      message: 'Payment verified successfully.',
+      unlocked: true,
+      message: 'Payment verified & ID Card unlocked successfully.',
       payment_order_id: payOrder.id,
       razorpay_payment_id,
       razorpay_order_id: resolvedOrderId,
