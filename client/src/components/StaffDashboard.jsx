@@ -432,7 +432,7 @@ export default function StaffDashboard({ user, onLogout }) {
         <div className="flex items-center gap-2 py-2.5 min-w-max">
           {[
             { id: 'overview', label: 'Dashboard Overview', icon: Sparkles },
-            { id: 'apply', label: application ? 'My Staff Application' : 'Apply for Staff ID (Free)', icon: FileText },
+            { id: 'apply', label: application ? 'My Staff Application' : 'Apply for Staff ID', icon: FileText },
             ...(isApproved ? [{ id: 'card', label: isDownloadUnlocked ? 'Download Staff ID Card' : 'Staff ID Card (Locked)', icon: isDownloadUnlocked ? Download : Lock }] : []),
             { id: 'notifications', label: `Notifications ${unreadNotifCount > 0 ? `(${unreadNotifCount})` : ''}`, icon: Bell },
             { id: 'profile', label: 'Staff Profile', icon: User }
@@ -513,7 +513,7 @@ export default function StaffDashboard({ user, onLogout }) {
                       <p className="text-[#888] text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
                         {isApproved && !isDownloadUnlocked
                           ? 'Your Staff ID Card application is approved! Unlock your card below to download PDF & PNG.'
-                          : 'WorkDen Official Staff Identity Portal. Submit your employment and Aadhar verification details free of charge.'}
+                          : 'WorkDen Official Staff Identity Portal. Submit your employment and Aadhar verification details.'}
                       </p>
                     </div>
 
@@ -784,7 +784,7 @@ export default function StaffDashboard({ user, onLogout }) {
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-3">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Official Staff Registration — 100% Free</span>
+                    <span>Official Staff Application</span>
                   </div>
                   <h2 className="text-2xl font-black text-white">Staff ID Card Application</h2>
                   <p className="text-[#888] text-xs mt-1.5 max-w-md mx-auto">
@@ -1061,7 +1061,7 @@ export default function StaffDashboard({ user, onLogout }) {
                     className="w-full py-3.5 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-sm rounded-2xl shadow-xl shadow-[#F5C542]/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    <span>{submitting ? 'Submitting Staff Application...' : 'Submit Staff Application (Free) →'}</span>
+                    <span>{submitting ? 'Submitting Staff Application...' : 'Submit Staff Application →'}</span>
                   </button>
                 </form>
               </div>
@@ -1282,7 +1282,7 @@ export default function StaffDashboard({ user, onLogout }) {
                   <div className="flex justify-between py-2 border-b border-[#252525]">
                     <span className="text-[#777]">Staff ID Card</span>
                     <span className="text-emerald-400 font-bold">
-                      {isApproved ? 'Approved & Issued (Free)' : 'Pending Application'}
+                      {isApproved ? (isDownloadUnlocked ? 'Approved & Unlocked' : 'Approved (Locked)') : 'Pending Application'}
                     </span>
                   </div>
                 </div>

@@ -136,9 +136,9 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
           </h2>
           <p className="text-[#888] text-xs mt-0.5">
             {typeFilter === 'USER'
-              ? 'Review Member applications (Free application, ₹99 payment required after approval to download)'
+              ? 'Review Member ID card applications (₹99 unlock fee after approval)'
               : typeFilter === 'STAFF'
-              ? 'Review WorkDen Staff applications (Completely FREE application and download)'
+              ? 'Review WorkDen Staff ID card applications (₹249 unlock fee after approval)'
               : 'Review and process all member & staff ID card applications'}
           </p>
         </div>
@@ -316,7 +316,7 @@ export default function ApplicationsView({ onApprovalSuccess, initialStatus = 'P
                             value: app.download_unlocked === 1 ? 'Unlocked (Active)' : 'Locked (Pending Payment Approval)'
                           }
                         ] : [
-                          { label: 'Staff ID Card Download', value: app.status === 'APPROVED' ? 'Unlocked (Free)' : 'Pending Approval' }
+                          { label: 'Staff ID Card Download', value: app.download_unlocked === 1 ? 'Unlocked (₹249 Paid)' : app.status === 'APPROVED' ? 'Locked (₹249 Pending)' : 'Pending Approval' }
                         ]),
                         { label: 'Joining Date', value: formatDateIST(app.joining_date) },
                         { label: 'Date of Birth', value: formatDateIST(app.dob) },

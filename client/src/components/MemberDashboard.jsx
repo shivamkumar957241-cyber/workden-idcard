@@ -431,7 +431,7 @@ export default function MemberDashboard({ user, onLogout }) {
         <div className="flex items-center gap-2 py-2.5 min-w-max">
           {[
             { id: 'overview', label: 'Dashboard Overview', icon: Sparkles },
-            { id: 'apply', label: application ? 'My Application' : 'Apply for ID Card (Free)', icon: FileText },
+            { id: 'apply', label: application ? 'My Application' : 'Apply for ID Card', icon: FileText },
             ...(isApproved ? [{ id: 'payment', label: isDownloadUnlocked ? 'Payment Completed' : 'Pay ₹99 & Unlock', icon: CreditCard, highlight: !isDownloadUnlocked }] : []),
             ...(isDownloadUnlocked ? [{ id: 'download', label: 'Download ID Card', icon: Download, badge: 'Active' }] : []),
             { id: 'notifications', label: `Notifications ${unreadNotifCount > 0 ? `(${unreadNotifCount})` : ''}`, icon: Bell },
@@ -516,7 +516,7 @@ export default function MemberDashboard({ user, onLogout }) {
                       <p className="text-[#888] text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
                         {isApproved && !isDownloadUnlocked
                           ? 'Your ID card application is approved! Unlock your card below to download PDF & PNG.'
-                          : 'Apply for your official WorkDen Identity Card with secure cryptographic QR verification. Application is 100% free.'}
+                          : 'Apply for your official WorkDen Identity Card with live QR verification on workden.online.'}
                       </p>
                     </div>
 
@@ -528,7 +528,7 @@ export default function MemberDashboard({ user, onLogout }) {
                           className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs sm:text-sm shadow-xl shadow-[#F5C542]/20 transition transform hover:-translate-y-0.5 cursor-pointer"
                         >
                           <FileText className="w-4 h-4" />
-                          <span>Apply for ID Card (Free) →</span>
+                          <span>Apply for ID Card →</span>
                         </button>
                       )}
 
@@ -575,8 +575,8 @@ export default function MemberDashboard({ user, onLogout }) {
                           <div className="w-2 h-2 rounded-full bg-[#555]" />
                         )}
                       </div>
-                      <p className="font-bold text-xs">Free Application</p>
-                      <p className="text-[11px] text-[#777] mt-1">Submit member details free of charge</p>
+                      <p className="font-bold text-xs">Submit Application</p>
+                      <p className="text-[11px] text-[#777] mt-1">Fill in your member details online</p>
                       <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
                         {application ? 'Completed' : 'Pending'}
                       </span>
@@ -834,9 +834,9 @@ export default function MemberDashboard({ user, onLogout }) {
             {activeTab === 'apply' && (
               <div className="bg-[#171717] border border-[#353535] rounded-3xl p-6 sm:p-8 max-w-3xl mx-auto shadow-2xl">
                 <div className="text-center mb-8">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-3">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F5C542]/10 border border-[#F5C542]/30 text-[#F5C542] text-xs font-bold mb-3">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Free Application — No Payment Required Now</span>
+                    <span>WorkDen Member Verification</span>
                   </div>
                   <h2 className="text-2xl font-black text-white">Member ID Card Application</h2>
                   <p className="text-[#888] text-xs mt-1.5 max-w-md mx-auto">
@@ -999,9 +999,8 @@ export default function MemberDashboard({ user, onLogout }) {
                   <div className="p-4 rounded-2xl bg-[#141414] border border-[#2e2e2e] flex items-start gap-3">
                     <HelpCircle className="w-4 h-4 text-[#F5C542] flex-shrink-0 mt-0.5" />
                     <p className="text-[11px] text-[#888] leading-relaxed">
-                      By submitting this form, you certify that the information provided is accurate.
-                      Applying is completely free. Once your application is reviewed and approved by WorkDen Admin,
-                      your official ID card will be issued in your portal.
+                      By submitting this form, you confirm that the information provided is accurate.
+                      Once reviewed and approved by WorkDen Admin, your official ID card will be issued in your portal.
                     </p>
                   </div>
 
@@ -1011,7 +1010,7 @@ export default function MemberDashboard({ user, onLogout }) {
                     className="w-full py-3.5 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-sm rounded-2xl shadow-xl shadow-[#F5C542]/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    <span>{submitting ? 'Submitting Application...' : 'Submit Application (Free) →'}</span>
+                    <span>{submitting ? 'Submitting Application...' : 'Submit Application →'}</span>
                   </button>
                 </form>
               </div>
@@ -1039,12 +1038,8 @@ export default function MemberDashboard({ user, onLogout }) {
                   {/* Pricing Breakdown Card */}
                   <div className="bg-[#121212] border border-[#2e2e2e] rounded-2xl p-5 mb-6 space-y-3">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#aaa]">Application Review Fee</span>
-                      <span className="text-emerald-400 font-bold">FREE (₹0)</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#aaa]">Cryptographic QR Token Generation</span>
-                      <span className="text-emerald-400 font-bold">FREE (₹0)</span>
+                      <span className="text-[#aaa]">Application & QR Verification</span>
+                      <span className="text-emerald-400 font-bold">Included</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#aaa]">Official Card Issuance & High-Res PDF Download</span>

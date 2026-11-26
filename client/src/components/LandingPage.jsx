@@ -62,21 +62,21 @@ export default function LandingPage() {
 
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-xl font-black text-white">WorkDen Member</h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  Free Application
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F5C542]/10 text-[#F5C542] border border-[#F5C542]/30">
+                  Member Portal
                 </span>
               </div>
 
               <p className="text-[#888] text-xs sm:text-sm mb-6 leading-relaxed">
-                For registered WorkDen platform members and digital task contributors.
+                For WorkDen members and online task contributors.
               </p>
 
               <div className="space-y-2.5 mb-8">
                 {[
-                  'Free Application Submission',
+                  'Simple Online Application',
                   'Admin Review & Verification',
-                  'Instant Digital ID Issuance',
-                  'QR Verified Digital ID Card'
+                  'Digital ID Card Issuance',
+                  'QR Verified Identity'
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -91,7 +91,7 @@ export default function LandingPage() {
                 onClick={() => navigate('/member/register')}
                 className="w-full py-3.5 bg-[#F5C542] hover:bg-[#e0b035] text-black font-black text-xs sm:text-sm rounded-2xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Apply as Member (Free)</span>
+                <span>Apply as Member</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
@@ -113,19 +113,19 @@ export default function LandingPage() {
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-xl font-black text-white">WorkDen Staff</h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  Free Application
+                  Staff Portal
                 </span>
               </div>
 
               <p className="text-[#888] text-xs sm:text-sm mb-6 leading-relaxed">
-                For official WorkDen operations, QA verifiers, and management team.
+                For WorkDen operations, QA verifiers, and management team.
               </p>
 
               <div className="space-y-2.5 mb-8">
                 {[
-                  'Free Staff ID Card Application',
+                  'Staff ID Card Application',
                   'Document & Identity Verification',
-                  'Instant Digital ID Issuance',
+                  'Digital ID Card Issuance',
                   'Official Employee Credential'
                 ].map(item => (
                   <div key={item} className="flex items-center gap-2.5">
@@ -141,7 +141,7 @@ export default function LandingPage() {
                 onClick={() => navigate('/staff/register')}
                 className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs sm:text-sm rounded-2xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Apply as Staff (Free)</span>
+                <span>Apply as Staff</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
@@ -157,10 +157,10 @@ export default function LandingPage() {
         {/* Feature Highlights Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-4xl mt-16 text-left">
           {[
-            { title: 'Free Application', desc: 'No fee to apply or submit documents', icon: Sparkles },
+            { title: 'Simple Application', desc: 'Quick online form & document upload', icon: Sparkles },
             { title: 'Verified Identity', desc: 'Authentic WorkDen digital credential', icon: ShieldCheck },
-            { title: 'Cryptographic QR', desc: 'Tamper-proof live identity check', icon: QrCode },
-            { title: 'Print Ready PDF', desc: 'High-res export with precise dimensions', icon: Download }
+            { title: 'QR Verification', desc: 'Instant live identity check via QR', icon: QrCode },
+            { title: 'Print Ready PDF', desc: 'High-resolution card download', icon: Download }
           ].map(f => {
             const Icon = f.icon;
             return (

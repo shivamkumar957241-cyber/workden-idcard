@@ -81,9 +81,9 @@ export default function RegisterPage({ onLogin, fixedType = null }) {
                 <Users className="w-6 h-6" style={{ color: '#F5C542' }} />
               </div>
               <h2 className="text-white font-black text-lg mb-2">Register as Member</h2>
-              <p className="text-[#777] text-sm mb-5 leading-relaxed">Join WorkDen as a member. Apply for your Member ID card for free.</p>
+              <p className="text-[#777] text-sm mb-5 leading-relaxed">Join WorkDen and apply for your official Member ID card.</p>
               <div className="space-y-1.5 mb-5">
-                {['Free registration', 'Member ID application', 'QR verified digital ID card'].map(f => (
+                {['Quick account setup', 'Member ID application', 'QR verified digital ID card'].map(f => (
                   <div key={f} className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                     <span className="text-[#aaa] text-xs">{f}</span>
@@ -106,7 +106,7 @@ export default function RegisterPage({ onLogin, fixedType = null }) {
               <h2 className="text-white font-black text-lg mb-2">Register as Staff</h2>
               <p className="text-[#777] text-sm mb-5 leading-relaxed">Join as a WorkDen staff member. Get your official Staff ID card.</p>
               <div className="space-y-1.5 mb-5">
-                {['Free staff registration', 'Official Staff ID card', 'QR verified credential'].map(f => (
+                {['Quick staff registration', 'Official Staff ID card', 'QR verified credential'].map(f => (
                   <div key={f} className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                     <span className="text-[#aaa] text-xs">{f}</span>
@@ -152,24 +152,8 @@ export default function RegisterPage({ onLogin, fixedType = null }) {
               <h1 className="text-xl font-black text-white">
                 {isStaff ? 'Staff Registration' : 'Member Registration'}
               </h1>
-              <p className="text-[#888] text-xs mt-1">WorkDen {isStaff ? 'Staff' : 'Member'} ID Card Portal</p>
+              <p className="text-[#888] text-xs mt-1">Create your WorkDen {isStaff ? 'Staff' : 'Member'} account</p>
             </div>
-
-            {isStaff && (
-              <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 mb-5">
-                <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                <p className="text-amber-300 text-xs leading-relaxed">
-                  Your account will be activated after ID application review and admin approval.
-                </p>
-              </div>
-            )}
-
-            {!isStaff && (
-              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 mb-5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <p className="text-emerald-300 text-xs">Application is completely FREE. Apply now for your official WorkDen ID card.</p>
-              </div>
-            )}
 
             {error && (
               <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-5">
